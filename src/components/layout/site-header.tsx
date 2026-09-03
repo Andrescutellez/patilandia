@@ -1,0 +1,157 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+
+import { mainNavigation } from "@/data/mock-store";
+import { Logo } from "@/components/patilandia/logo";
+import {
+  CartIcon,
+  CloseIcon,
+  HeartIcon,
+  MenuIcon,
+  SearchIcon,
+  UserIcon
+} from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
+import { useStore } from "@/store/store-provider";
+
+function HeaderLink({
+  href,
+  label,
+  pathname,
+  onClick
+}: {
+  href: string;
+  label: string;
+  pathname: string;
+  onClick?: () => void;
+}) {
+  const isActive = href === "/" ? pathname === href : pathname.startsWith(href);
+
+  return (
+    <Link
+      className={cn(
+        "relative text-sm font-bold text-[var(--ink)] transition hover:text-[var(--brand-violet-deep)]",
+        isActive && "text-[var(--brand-violet-deep)]"
+      )}
+      href={href}
+      onClick={onClick}
+    >
+      {label}
+      <span
+        className={cn(
+          "absolute -bottom-3 left-0 h-0.5 rounded-full bg-[var(--brand-violet)] transition-all",
+          isActive ? "w-full" : "w-0"
+        )}
+      />
+    </Link>
+  );
+}
+
+function IconLink({
+  href,
+  label,
+  count,
+  children
+}: {
+  href: string;
+  label: string;
+  count?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      aria-label={label}
+      className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-white/80 text-[var(--brand-violet-deep)] transition hover:-translate-y-0.5 hover:border-[var(--brand-violet)]"
+      href={href}
+    >
+      {children}
+      {count && count > 0 ? (
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-violet)] px-1 text-[10px] font-bold text-white">
+          {count}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+export function SiteHeader() {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const { cartCount, wishlistCount } = useStore();
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-white/60 bg-[rgba(255,251,246,0.82)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-0 sm:px-6 lg:px-8">
+        <button
+          aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--brand-violet-deep)] lg:hidden"
+          onClick={() => setIsOpen((current) => !current)}
+          type="button"
+        >
+          {isOpen ? <CloseIcon /> : <MenuIcon />}
+        </button>
+
+        <Logo className="shrink-0" />
+
+        <nav className="ml-8 hidden items-center gap-8 lg:flex">
+          {mainNavigation.map((link) => (
+            <HeaderLink key={link.href} href={link.href} label={link.label} pathname={pathname} />
+          ))}
+        </nav>
+
+        <div className="ml-auto hidden items-center gap-3 md:flex">
+          <label className="flex h-12 min-w-[250px] items-center gap-3 rounded-full border border-[var(--line)] bg-white/90 px-4">
+            <SearchIcon className="h-4 w-4 text-[var(--muted)]" />
+            <input
+              className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--muted)]"
+              placeholder="Buscar productos mágicos..."
+              type="search"
+            />
+          </label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <IconLink href="/wishlist" label="Favoritos" count={wishlistCount}>
+            <HeartIcon className="h-5 w-5" />
+          </IconLink>
+          <IconLink href="/cuenta" label="Cuenta">
+            <UserIcon className="h-5 w-5" />
+          </IconLink>
+          <IconLink href="/carrito" label="Carrito" count={cartCount}>
+            <CartIcon className="h-5 w-5" />
+          </IconLink>
+        </div>
+      </div>
+
+      {isOpen ? (
+        <div className="border-t border-white/70 bg-[var(--surface)] px-4 py-5 lg:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4">
+            <label className="flex h-12 items-center gap-3 rounded-full border border-[var(--line)] bg-white px-4">
+              <SearchIcon className="h-4 w-4 text-[var(--muted)]" />
+              <input
+                className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--muted)]"
+                placeholder="Buscar productos mágicos..."
+                type="search"
+              />
+            </label>
+
+            <nav className="grid gap-3">
+              {mainNavigation.map((link) => (
+                <HeaderLink
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  onClick={() => setIsOpen(false)}
+                  pathname={pathname}
+                />
+              ))}
+            </nav>
+          </div>
+        </div>
+      ) : null}
+    </header>
+  );
+}
