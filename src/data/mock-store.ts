@@ -140,9 +140,6 @@ function createProduct(
   overrides: Partial<StorefrontProduct> & Pick<StorefrontProduct, "slug" | "sku" | "name">
 ): StorefrontProduct {
   return {
-    slug: overrides.slug,
-    sku: overrides.sku,
-    name: overrides.name,
     categorySlug: "camitas",
     categoryLabel: "Camitas",
     collectionSlug: "dreams",
