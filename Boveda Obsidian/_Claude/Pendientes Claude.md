@@ -1,0 +1,75 @@
+---
+title: Pendientes Claude
+date: 2026-09-04
+tags:
+  - claude
+  - pendientes
+  - tareas
+status: activo
+---
+
+# Pendientes Claude
+
+> [!tip] Cómo usar esta nota
+> Al iniciar una sesión, revisar **Bugs activos** y **Alta prioridad**. Al terminar, mover lo completado a **Completados** y agregar nuevos pendientes. Esta lista sale de comparar el código real contra [[Patilandia — Brief Original]] el 2026-09-04.
+
+## Bugs activos
+
+- [ ] **ESLint roto** — `npm run lint` falla inmediatamente: `.eslintrc.json` es formato legacy (ESLint <9) pero el paquete instalado es `eslint@9.39.5`, que requiere `eslint.config.js` (flat config). Hoy el proyecto tiene **cero linting real corriendo**. Fix: migrar `.eslintrc.json` → `eslint.config.js` usando `eslint-config-next` en formato flat (ya está en `devDependencies`).
+
+## Alta prioridad (brechas directas del brief)
+
+- [ ] **Buscador del header no funcional** — `SiteHeader` tiene un `<input type="search">` sin `onChange`/estado; no filtra ni navega a `/tienda?buscar=...`. El brief (sección 6) lo pide explícitamente como parte del header.
+- [ ] **Catálogo — filtro de precio** — `CatalogView` filtra por tamaño, tipo de mascota, categoría, búsqueda y orden, pero **no** por rango de precio (brief sección 8 lo pide explícitamente).
+- [ ] **Catálogo — filtro de disponibilidad** — no existe filtro por stock/disponibilidad (brief sección 8), aunque `StorefrontProduct.stock` ya existe como campo.
+- [ ] **Catálogo — paginación / carga progresiva** — `CatalogView` renderiza todos los `visibleProducts` de una vez, sin paginar ni infinite scroll (brief sección 8).
+- [ ] **SEO por producto** — `producto/[slug]/page.tsx` no exporta `generateMetadata`; toda página de producto hereda el `<title>`/OG genérico del layout raíz en vez de título, descripción e imagen específicos del producto (brief sección 18/19). Mismo problema en `categorias/[slug]/page.tsx`.
+- [ ] **`sitemap.xml` / `robots.txt`** — no existen (`src/app/sitemap.ts` / `src/app/robots.ts` de Next.js). Brief sección 18 pide "URLs amigables" y buena base SEO.
+- [ ] **Checkout sin estado real** — `CheckoutPage` es un formulario 100% estático (`<input>` sin `value`/`onChange`, sin validación, sin submit handler real). El botón "Continuar con pago seguro" no hace nada. Falta al menos: estado de formulario, validación básica, y el punto de integración hacia Medusa/Wompi (aunque sea un stub).
+
+## Media prioridad
+- [ ] **Animaciones/microinteracciones** — brief sección 13 sugiere Framer Motion "si aporta valor" para fades/slides de entrada de sección. Hoy solo hay transiciones CSS (`hover:-translate-y-1`, `transition duration-300`). No está instalado `framer-motion` ni `motion`.
+- [ ] **`/cuenta` sin lógica** — es un placeholder visual (4 tarjetas estáticas), correcto para esta fase pero sin ningún hook hacia auth/clientes de Medusa todavía.
+- [ ] **Sin tests** — no hay Jest/Vitest/Playwright configurado. El brief no lo exige explícitamente pero sección 17 pide "calidad de código" y "arquitectura limpia".
+
+## Roadmap Patilandia Admin (2026-09-04 — solo diagnóstico, nada construido)
+
+Ver [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] para el diagnóstico completo. Nada de esto está implementado — son 7 fases a ejecutar en sesiones futuras:
+
+- [ ] **Fase 1** — Dashboard Patilandia (UI Route) + widget de metadata en producto.
+- [ ] **Fase 2** — Módulo `pet` (mascotas de clientes) + widget en cliente.
+- [ ] **Fase 3** — Módulo `supplier` (proveedores) + UI Route `/suppliers`.
+- [ ] **Fase 4** — Spike de Fulfillment Provider por peso (verificar que `calculatePrice` se dispara en Medusa 2.20.1 antes de construir la lógica real).
+- [ ] **Fase 5** — Módulo `purchase-order` (compras/abastecimiento).
+- [ ] **Fase 6** — Módulo `loyalty` (fidelización).
+- [ ] **Fase 7** — Módulo `subscription` (recompras).
+
+## Nuevo tras conectar Medusa (2026-09-04)
+
+- [ ] **Cambiar la contraseña de admin de Medusa** — quedó una temporal (`Patilandia2026!`) para poder avanzar sin depender de un flujo de invitación por navegador. Ver [[Entorno de Desarrollo Local]].
+- [ ] **Categorías demo huérfanas en Medusa** (Shirts, Sweatshirts, Pants, Merch) — `deleteProductCategoriesWorkflow` da error en Medusa 2.20.1 (bug/limitación de esta versión, no nuestro), así que quedaron sin borrar. Solo desorden cosmético en `/app`, borrar a mano cuando se quiera.
+- [ ] **Variantes reales por talla/color en Medusa** — hoy cada producto tiene un único variant "Única"; talla/color siguen siendo campos de `metadata`, no variantes Medusa reales con su propio inventario/precio. Es deuda técnica consciente (ver [[Decisiones y Razonamiento]]), necesaria antes de un checkout real contra el carrito de Medusa.
+- [ ] **Región "Colombia" recién creada, sin terminar de configurar** — existe con moneda COP y país `co`, pero no tiene shipping options ni fulfillment set propio todavía (el único fulfillment/warehouse que existe sigue siendo el "European Warehouse" que trae Medusa por defecto). Falta antes de que un checkout real funcione para envíos a Colombia.
+- [ ] **`patilandia-backend` sin commits** — el repo se inicializó (`git init`) pero no se ha hecho ningún commit ni configurado remote. Hacerlo cuando el usuario lo pida explícitamente.
+- [ ] **Sincronización manual entre `data/mock-store.ts` y el catálogo real de Medusa** — no hay ningún mecanismo que mantenga sincronizados los 8 productos mock del storefront con los 8 productos reales ya creados en Medusa (`patilandia-seed.ts`). Si se edita uno, hay que editar el otro a mano.
+- [ ] **Redis no configurado** — Medusa corre con "fake redis"/event bus local en memoria. Válido para desarrollo con una sola instancia; no sirve para producción con múltiples procesos.
+- [ ] **Revisar `AGENTS.md` y `CLAUDE.md`** que `create-medusa-app` generó automáticamente dentro de `patilandia-backend` — son guías propias de Medusa para agentes de IA trabajando en ese repo, todavía no leídas a fondo.
+
+## Correctamente diferido (no es pendiente, es decisión consciente — no tocar sin razón)
+
+- Wompi / Mercado Pago — brief los marca como fase posterior explícitamente.
+- Cálculo real de envío por peso/volumen/destino/transportadora — arquitectura preparada, ver [[Shipping — Arquitectura de Envíos]].
+- Autenticación de clientes.
+- Dominios de producción (`patilandia.com.co`, `administrador.patilandia.com.co`, `api.patilandia.com.co`) y servidor real (VPS/GCP con PM2+nginx, al estilo Argus) — hoy todo corre en local, el despliegue es un paso futuro explícitamente pospuesto.
+
+## Completados
+
+- [x] **2026-09-04 — Instalar y conectar Medusa.** Backend Medusa 2.20.1 corriendo en local (`patilandia-backend`, repo hermano), Postgres en Docker (puerto 5433, evitando conflicto con una instancia nativa de Postgres ya presente en la máquina), usuario admin creado, publishable key generada y linkeada al Default Sales Channel. Ver [[Entorno de Desarrollo Local]].
+- [x] **2026-09-04 — Migrar los 8 productos Patilandia a Medusa.** Catálogo demo genérico de Medusa (camisetas) borrado (soft-delete); los 8 productos reales creados vía workflows oficiales con `metadata` fiel al esquema que `adaptMedusaProduct` ya esperaba — cero regresión visual. Ver [[Decisiones y Razonamiento]].
+- [x] **2026-09-04 — `HomePage` y `WishlistPage` ya no rompen la capa de adaptación.** `HomePage` es ahora `async` y usa `getHomepageProducts()`/`getHomepageCollections()` de `lib/storefront.ts`; `WishlistRoute` hace `await getStorefrontProducts()` y pasa los productos como prop a `WishlistPage`. Las 9 rutas pasan consistentemente por `lib/storefront.ts`.
+- [x] **2026-09-04 — Adaptador Medusa mejorado: galería de imágenes real.** `adaptMedusaProduct` ahora lee `record.images` (array real de Medusa) para `galleryImages`, con fallback a `[thumbnail]` — antes solo repetía el thumbnail.
+- [x] **2026-09-04 — `.env.local` del storefront apuntado a Medusa real**, con `NEXT_PUBLIC_MEDUSA_BACKEND_URL`, `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` reales. Verificado con `npm run typecheck` limpio y las 9 rutas respondiendo 200 con datos reales de Medusa (precio, imágenes, título todos correctos).
+
+*(Antes de esta sesión, el código ya traía resuelto: homepage, catálogo con filtros parciales, product detail con galería/variantes, carrito y wishlist persistentes, identidad visual completa, capa de adaptación Medusa — ver [[Contexto Patilandia]].)*
+
+Tags: #claude #pendientes #tareas

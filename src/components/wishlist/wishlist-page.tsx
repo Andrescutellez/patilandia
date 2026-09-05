@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 
-import { products } from "@/data/mock-store";
 import { buttonStyles } from "@/components/ui/button";
 import { ProductCard } from "@/components/products/product-card";
 import { useStore } from "@/store/store-provider";
+import type { StorefrontProduct } from "@/types/commerce";
 
-export function WishlistPage() {
+export function WishlistPage({ products }: { products: StorefrontProduct[] }) {
   const { wishlist } = useStore();
   const items = products.filter((product) => wishlist.includes(product.slug));
 

@@ -18,6 +18,11 @@ export function adaptMedusaProduct(record: MedusaRecord): StorefrontProduct {
     typeof record.metadata === "object" && record.metadata !== null
       ? (record.metadata as MedusaRecord)
       : {};
+  const images = Array.isArray(record.images)
+    ? (record.images as MedusaRecord[])
+        .map((image) => readString(image.url, ""))
+        .filter((url) => url.length > 0)
+    : [];
 
   return {
     slug: handle,
@@ -37,7 +42,7 @@ export function adaptMedusaProduct(record: MedusaRecord): StorefrontProduct {
       "Este producto llega desde Medusa mediante una capa adaptadora desacoplada."
     ),
     image: thumbnail,
-    galleryImages: [thumbnail],
+    galleryImages: images.length > 0 ? images : [thumbnail],
     price: readNumber(metadata.price, 0),
     compareAtPrice: readNumber(metadata.compareAtPrice, 0) || undefined,
     rating: readNumber(metadata.rating, 4.8),

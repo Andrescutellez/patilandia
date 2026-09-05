@@ -1,4 +1,4 @@
-import { products, findProductBySlug, getFeaturedProducts, getRelatedProducts } from "@/data/mock-store";
+import { collections, products, findProductBySlug, getRelatedProducts } from "@/data/mock-store";
 import { adaptMedusaProduct } from "@/lib/medusa/adapters";
 import { medusaFetch } from "@/lib/medusa/client";
 import type { StorefrontProduct } from "@/types/commerce";
@@ -8,7 +8,9 @@ interface MedusaProductsResponse {
 }
 
 export async function getStorefrontProducts() {
-  const response = await medusaFetch<MedusaProductsResponse>("/store/products");
+  const response = await medusaFetch<MedusaProductsResponse>(
+    "/store/products?fields=+metadata,+images.url"
+  );
 
   if (response?.products?.length) {
     return response.products.map(adaptMedusaProduct);
@@ -28,7 +30,9 @@ export async function getHomepageProducts() {
 }
 
 export async function getHomepageCollections() {
-  return getFeaturedProducts(5);
+  // Collections are fixed visual themes (royal/galaxy/magic/safari/dreams),
+  // not a Medusa entity — they stay static regardless of catalog source.
+  return collections;
 }
 
 export function getFallbackProduct(slug: string): StorefrontProduct | undefined {

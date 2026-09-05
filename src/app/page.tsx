@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { benefits, collections, getFeaturedProducts } from "@/data/mock-store";
+import { benefits } from "@/data/mock-store";
 import { BenefitsStrip } from "@/components/home/benefits-strip";
 import { CategoryStrip } from "@/components/home/category-strip";
 import { CollectionCard } from "@/components/home/collection-card";
@@ -8,9 +8,13 @@ import { HomeHero } from "@/components/home/home-hero";
 import { ProductCard } from "@/components/products/product-card";
 import { buttonStyles } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { getHomepageCollections, getHomepageProducts } from "@/lib/storefront";
 
-export default function HomePage() {
-  const featuredProducts = getFeaturedProducts(6);
+export default async function HomePage() {
+  const [featuredProducts, collections] = await Promise.all([
+    getHomepageProducts(),
+    getHomepageCollections(),
+  ]);
 
   return (
     <div className="pb-12">
