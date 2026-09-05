@@ -30,7 +30,7 @@ export function WishlistPage({ products }: { products: StorefrontProduct[] }) {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           {items.map((item) => (
             <ProductCard key={item.slug} product={item} />
           ))}

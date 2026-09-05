@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { categories, collections } from "@/data/mock-store";
@@ -19,18 +20,30 @@ export default function CategoriesPage() {
           eyebrow="Categorías"
           title="La base navegable del catálogo"
         />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {categories.map((category) => (
             <Link
               key={category.slug}
-              className="rounded-[1.6rem] border border-[var(--line)] bg-[var(--surface)] p-5 transition hover:-translate-y-1 hover:border-[var(--brand-violet)]"
+              className="rounded-[1.6rem] border border-[var(--line)] bg-[var(--surface)] p-3 transition hover:-translate-y-1 hover:border-[var(--brand-violet)] sm:p-5"
               href={`/categorias/${category.slug}`}
             >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand-violet-deep)]">
-                <CategoryIcon className="h-6 w-6" icon={category.icon} />
+              <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[var(--brand-soft)] text-[var(--brand-violet-deep)] sm:h-14 sm:w-14">
+                {category.image ? (
+                  <Image
+                    alt={category.name}
+                    className="object-cover"
+                    fill
+                    sizes="56px"
+                    src={category.image}
+                  />
+                ) : (
+                  <CategoryIcon className="h-5 w-5 sm:h-6 sm:w-6" icon={category.icon} />
+                )}
               </span>
-              <p className="mt-4 font-display text-3xl leading-none text-[var(--ink)]">{category.name}</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{category.description}</p>
+              <p className="mt-3 font-display text-xl leading-tight text-[var(--ink)] sm:mt-4 sm:text-3xl sm:leading-none">
+                {category.name}
+              </p>
+              <p className="mt-2 text-xs text-[var(--muted)] sm:text-sm">{category.description}</p>
             </Link>
           ))}
         </div>
@@ -44,7 +57,7 @@ export default function CategoriesPage() {
           eyebrow="Colecciones"
           title="Lenguaje visual consistente"
         />
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-5">
           {collections.map((collection) => (
             <CollectionCard key={collection.slug} collection={collection} />
           ))}

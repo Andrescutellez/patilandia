@@ -22,56 +22,56 @@ export const categories: Category[] = [
     name: "Camitas",
     tagline: "Descanso con magia",
     description: "Nuestro universo textil premium para perros y gatos.",
-    icon: "bed"
+    icon: "bed",
+    image: "/images/patilandia/categoria camas.png"
   },
   {
     slug: "juguetes",
     name: "Juguetes",
     tagline: "Diversión encantada",
     description: "Peluches, mordedores y estímulos para jugar en serio.",
-    icon: "ball"
+    icon: "ball",
+    image: "/images/patilandia/categoria juguetes.png"
   },
   {
     slug: "alimentos",
     name: "Alimentos",
     tagline: "Nutrición feliz",
     description: "Comida y snacks elegidos para su bienestar diario.",
-    icon: "bowl"
-  },
-  {
-    slug: "snacks",
-    name: "Snacks",
-    tagline: "Premios con cariño",
-    description: "Detalles deliciosos para reforzar rutinas y entrenamiento.",
-    icon: "treat"
+    icon: "bowl",
+    image: "/images/patilandia/categoria comida.png"
   },
   {
     slug: "accesorios",
     name: "Accesorios",
     tagline: "Estilo y comodidad",
     description: "Collares, placas y esenciales para paseos con personalidad.",
-    icon: "collar"
+    icon: "collar",
+    image: "/images/patilandia/categoria accesorios.png"
   },
   {
     slug: "higiene",
     name: "Higiene",
     tagline: "Rutinas suaves",
     description: "Cepillos, tapetes y soluciones pensadas para el cuidado diario.",
-    icon: "brush"
+    icon: "brush",
+    image: "/images/patilandia/categoria higiene.png"
   },
   {
     slug: "transporte",
     name: "Transporte",
     tagline: "Viajes tranquilos",
     description: "Morrales, guacales y opciones seguras para moverse juntos.",
-    icon: "carrier"
+    icon: "carrier",
+    image: "/images/patilandia/categoria viaje.png"
   },
   {
     slug: "ropa",
     name: "Ropa",
     tagline: "Capas encantadas",
     description: "Textiles para clima, foto o paseo con identidad Patilandia.",
-    icon: "shirt"
+    icon: "shirt",
+    image: "/images/patilandia/categoria ropa.png"
   }
 ];
 
@@ -335,8 +335,8 @@ export const products: StorefrontProduct[] = [
     slug: "snack-crunch-pollo",
     sku: "PAT-SNACK-008",
     name: "Snack Crunch Pollo",
-    categorySlug: "snacks",
-    categoryLabel: "Snacks",
+    categorySlug: "alimentos",
+    categoryLabel: "Alimentos",
     collectionSlug: "dreams",
     image: "/images/patilandia/royal-bed.png",
     galleryImages: ["/images/patilandia/royal-bed.png"],

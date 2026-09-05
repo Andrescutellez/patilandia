@@ -11,6 +11,7 @@ export interface Category {
   tagline: string;
   description: string;
   icon: string;
+  image?: string;
 }
 
 export interface Collection {

@@ -6,15 +6,15 @@ export function Logo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={cn("inline-flex items-center", className)}
+      className={cn("inline-flex items-center py-2", className)}
     >
       <Image
-        src="/images/patilandia/logo-patilandia.png"
+        src="/images/patilandia/logo-rectangular.png"
         alt="Patilandia - Un mundo hecho para ellos"
-        width={220}
-        height={80}
+        width={1512}
+        height={600}
         priority
-        className="h-auto w-[140px]"
+        className="h-16 w-auto"
       />
     </Link>
   );

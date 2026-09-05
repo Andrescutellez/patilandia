@@ -187,7 +187,7 @@ export function CatalogView({
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/60 bg-white/75 p-3 shadow-[0_18px_45px_rgba(31,36,84,0.08)] md:grid-cols-4 lg:grid-cols-8">
+      <section className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/60 bg-white/75 p-3 shadow-[0_18px_45px_rgba(31,36,84,0.08)] md:grid-cols-4 lg:grid-cols-7">
         {categories.map((category) => (
           <Link
             key={category.slug}
@@ -196,8 +196,18 @@ export function CatalogView({
             }`}
             href={`/categorias/${category.slug}`}
           >
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand-violet-deep)]">
-              <CategoryIcon className="h-6 w-6" icon={category.icon} />
+            <span className="relative mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[var(--brand-soft)] text-[var(--brand-violet-deep)]">
+              {category.image ? (
+                <Image
+                  alt={category.name}
+                  className="object-cover"
+                  fill
+                  sizes="56px"
+                  src={category.image}
+                />
+              ) : (
+                <CategoryIcon className="h-6 w-6" icon={category.icon} />
+              )}
             </span>
             <p className="mt-3 text-sm font-bold text-[var(--ink)]">{category.name}</p>
           </Link>
@@ -246,7 +256,7 @@ export function CatalogView({
 
           {mobileFiltersOpen ? <div className="lg:hidden">{filters}</div> : null}
 
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
             {visibleProducts.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}

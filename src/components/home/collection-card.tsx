@@ -27,10 +27,10 @@ export function CollectionCard({ collection }: { collection: Collection }) {
         />
         <div className={`absolute inset-0 bg-gradient-to-t ${overlayMap[collection.theme]}`} />
       </div>
-      <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-        <p className="font-display text-3xl leading-none">{collection.title}</p>
-        <p className="mt-2 text-sm font-semibold text-white/88">{collection.subtitle}</p>
-        <p className="mt-2 text-sm leading-6 text-white/76">{collection.description}</p>
+      <div className="absolute inset-x-0 bottom-0 p-3 text-white sm:p-5">
+        <p className="font-display text-xl leading-tight sm:text-3xl sm:leading-none">{collection.title}</p>
+        <p className="mt-1 text-xs font-semibold text-white/88 sm:mt-2 sm:text-sm">{collection.subtitle}</p>
+        <p className="mt-1 hidden text-sm leading-6 text-white/76 sm:mt-2 sm:block">{collection.description}</p>
       </div>
     </Link>
   );

@@ -33,7 +33,7 @@ function HeaderLink({
   return (
     <Link
       className={cn(
-        "relative text-sm font-bold text-[var(--ink)] transition hover:text-[var(--brand-violet-deep)]",
+        "relative text-base font-bold text-[var(--ink)] transition hover:text-[var(--brand-violet-deep)]",
         isActive && "text-[var(--brand-violet-deep)]"
       )}
       href={href}
