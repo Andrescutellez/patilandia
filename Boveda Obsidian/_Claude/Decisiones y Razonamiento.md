@@ -27,6 +27,22 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Hero de home en mobile: mismo tratamiento `aspect-ratio` que desktop, botón fuera de la imagen
+
+**Contexto:** Tras el ajuste anterior (mismo día, ver debajo), el usuario probó mobile y pidió que la imagen "abarque a todo lo ancho" — el mobile seguía usando el patrón viejo (altura fija 450px + `object-left`), que recorta ~65% del contenido horizontal de la imagen para que quepa en un viewport angosto. El usuario quería ver la imagen completa, no un recorte.
+
+**Decisión:** Mobile pasa a usar el mismo mecanismo que ya se había validado para desktop — `aspect-ratio` (`aspect-[1786/881]`, la proporción real de `imagen-home.png`) en la `<section>`, sin `object-position` (ya no hace falta, no hay recorte). Con esto la imagen se muestra **completa** en cualquier ancho de mobile, tal como ya pasaba en desktop.
+
+**El problema nuevo que esto generó — y cómo se resolvió:** a `aspect-ratio` de 2.03:1, un mobile de 390px de ancho da solo ~192px de alto. El botón "Explorar la tienda", que hasta ahora vivía superpuesto sobre la imagen (`items-end` dentro de la sección), ya no tenía margen seguro para no tapar la última línea del párrafo horneado en la imagen — a esa altura tan baja, prácticamente cualquier posición del botón caería encima de texto. Se intentó primero un parche (dos variantes de botón, chica para mobile/grande para desktop, alternadas con clases `sm:hidden`/`hidden sm:inline-flex`) que **falló**: ambas quedaban visibles a la vez, porque `hidden` y `inline-flex` (esta última ya viene fija en `buttonStyles`) compiten por la misma propiedad `display` y Tailwind no garantiza que el modificador responsivo gane solo por aparecer después en el string de clases. Se descartó el parche.
+
+**Decisión final:** el botón sale de la imagen. `HomeHero` ahora renderiza dos bloques hermanos (la `<section>` de la imagen, sin overlay, y un `<div>` aparte debajo con el mismo fondo `bg-[#1d256d]` para continuidad visual) — el CTA vive en ese segundo bloque, en flujo normal de página, nunca superpuesto a la imagen. Esto elimina el problema de raíz para cualquier altura de imagen futura, no solo para esta imagen puntual.
+
+**Por qué no se intentó ajustar la posición del botón en vez de sacarlo:** a 192px de alto no hay ningún hueco "seguro" garantizado — depende de exactamente dónde termine el texto horneado en la imagen, que puede variar si el usuario vuelve a cambiar la imagen. Sacar el botón de la imagen es la solución que no depende de conocer esa posición.
+
+**Impacto:** Verificado con Playwright en 390 (mobile) y 768/1024/1280/1920 (desktop) — imagen completa sin recorte en todos los anchos, botón siempre en su propia franja, cero riesgo de superposición. Mismo criterio para desktop y mobile ahora: sección = solo imagen a `aspect-ratio` real, CTA en un bloque separado debajo.
+
+---
+
 ### [2026-09-09] Hero de home: imagen distinta por breakpoint (mobile vs. desktop), `aspect-ratio` en vez de altura fija en desktop
 
 **Contexto:** El usuario probó el hero recién implementado (ver decisión inmediatamente debajo, misma fecha) y pidió dos ajustes: 1) la imagen `imagen-home.png` se queda **solo para mobile**, pero "no se ve bien" — hacía falta que abarcara mejor la pantalla; 2) subió una imagen nueva, `imagen-home-destok.png` (2098×749, ratio ~2.8:1, misma composición pero más panorámica — el texto y la tarjeta "Pequeños detalles" quedan más separados de los bordes), para usar en desktop.
