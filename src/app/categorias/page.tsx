@@ -70,7 +70,7 @@ export default function CategoriesPage() {
           Las categorías quedan desacopladas del origen de datos. Hoy pueden consumir mocks y mañana
           productos, variantes, precios e inventario desde la Store API de Medusa.
         </p>
-        <Link className={buttonStyles({ variant: "gold", className: "mt-6" })} href="/checkout">
+        <Link className={buttonStyles({ className: "mt-6" })} href="/checkout">
           Ver flujo de compra
         </Link>
       </section>

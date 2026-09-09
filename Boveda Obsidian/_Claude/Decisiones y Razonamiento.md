@@ -27,6 +27,20 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Botón del hero de vuelta dentro de la imagen (centrado abajo); sistema de botones sin gradientes
+
+**Contexto:** El usuario vio el botón "Explorar la tienda" en su propia franja debajo de la imagen (decisión inmediatamente anterior) y no le gustó — lo quería de vuelta encima de la imagen, tanto en mobile como en desktop.
+
+**Decisión — hero:** El botón vuelve a ser un overlay `absolute` dentro de la `<section>`, pero ahora **centrado horizontalmente** (`inset-x-0 flex justify-center`) en vez de alineado a la izquierda como en el intento original que causó el problema de superposición. Centrado, el botón cae sobre el área de la cama/mascotas (foto, sin texto horneado ahí) en vez de sobre el bloque de texto izquierdo, que es lo que rompía la legibilidad antes. Verificado con capturas en 390/1440px — sin superposición con ningún texto de la imagen en ninguno de los dos anchos.
+
+**Decisión — sistema de botones, pedido en la misma sesión:** "quitale los gradientes de botones y demás, dejale el morado clarito." Se aplicó a `buttonStyles` (`src/components/ui/button.tsx`): el variant `primary` pasó de gradiente (`linear-gradient(135deg, var(--brand-violet), var(--brand-violet-deep))`) a relleno plano `bg-[var(--brand-violet)]` (el token de marca, `#7261ff`). El variant `gold` (gradiente dorado, solo usado en 2 lugares — `cuenta/page.tsx` y `categorias/page.tsx`, ambos como CTA secundario sobre una tarjeta oscura) se **eliminó** en vez de dejarlo con gradiente dorado: ambos usos pasaron a variant por defecto (`primary`, ya plano morado). Se optó por borrar el variant en vez de dejarlo sin uso, seg��n la convención del proyecto de no dejar código muerto "por si se usa en otro lado".
+
+**Qué NO se tocó y por qué:** las tarjetas grandes de fondo oscuro con degradado violeta/azul (`page.tsx` x2, `cuenta/page.tsx`, `categorias/page.tsx`, `product-detail.tsx`) siguen con su gradiente — no son "botones", tienen texto blanco encima que depende de un fondo oscuro para ser legible (aplanarlas a morado clarito sin cambiar el color del texto habría roto la legibilidad). Tampoco se tocaron: el scrim del hero de `CatalogView` (gradiente funcional para contraste de texto sobre foto, no decorativo), el fondo crema de `globals.css`, el footer (gradiente azul marino, no violeta), ni los efectos sutiles blancos de brillo en `ProductCard`/`category-strip` (no son parte del sistema de "gradiente violeta" que se pidió sacar). Si el usuario quiere que esas tarjetas oscuras también pierdan el gradiente, hay que decidir a la vez qué pasa con el color del texto — no es un cambio de una sola línea como en los botones.
+
+**Impacto:** Verificado con capturas en home, tienda (grid de productos), cuenta y categorías (las dos páginas con la tarjeta oscura + botón) — el botón morado plano se sigue leyendo bien tanto sobre el hero de imagen como sobre las tarjetas oscuras sin tocar. `npm run build` limpio. Ver [[Pendientes Claude]].
+
+---
+
 ### [2026-09-09] Hero de home en mobile: mismo tratamiento `aspect-ratio` que desktop, botón fuera de la imagen
 
 **Contexto:** Tras el ajuste anterior (mismo día, ver debajo), el usuario probó mobile y pidió que la imagen "abarque a todo lo ancho" — el mobile seguía usando el patrón viejo (altura fija 450px + `object-left`), que recorta ~65% del contenido horizontal de la imagen para que quepa en un viewport angosto. El usuario quería ver la imagen completa, no un recorte.

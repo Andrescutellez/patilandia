@@ -39,7 +39,7 @@ export default function AccountPage() {
           Cuando conectemos clientes y órdenes reales, esta sección podrá mostrar historial, recompensas,
           preferencias y productos recurrentes sin reconstruir la experiencia.
         </p>
-        <Link className={buttonStyles({ variant: "gold", className: "mt-6" })} href="/wishlist">
+        <Link className={buttonStyles({ className: "mt-6" })} href="/wishlist">
           Ver wishlist
         </Link>
       </div>
