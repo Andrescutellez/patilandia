@@ -27,6 +27,18 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Botón del hero: tamaño y posición distintos en mobile vs. desktop
+
+**Contexto:** Con el botón centrado (decisión inmediatamente anterior), el usuario pidió específicamente para mobile: achicarlo, confirmar letras blancas (ya lo eran, variant `primary`) y moverlo a la izquierda de la imagen.
+
+**Decisión:** `HomeHero` ahora renderiza dos `<Link>` en contenedores separados (uno `md:hidden`, otro `hidden md:flex`) en vez de uno solo con clases responsivas mezcladas — evita el bug de "dos botones visibles a la vez" que ya había ocurrido antes al intentar alternar tamaños con `sm:hidden`/`hidden sm:inline-flex` sobre el mismo elemento (`hidden` compite con el `inline-flex` fijo de `buttonStyles` en la misma propiedad `display`, con resultado impredecible). Mobile: `size: "sm"`, alineado a la izquierda (`justify-start px-4`), `bottom-[8%]`. Desktop: sin cambios, `size: "lg"`, centrado, `bottom-[6%]`.
+
+**Por qué el botón chico a la izquierda no repite el problema de superposición de antes:** con el ancho fijo por `aspect-ratio` (no crop), el bloque de texto siempre termina en la misma proporción vertical (~66% de alto) sin importar el ancho de pantalla. Un botón más chico dentro del hueco de pavimento que queda debajo del párrafo (los últimos ~34% de alto) cabe sin tocar el texto — el botón grande (`lg`, 56px) sí quedaba muy justo ahí; el chico (`sm`, 40px) tiene margen de sobra. Verificado con captura real en 390px: sin superposición.
+
+**Impacto:** Patrón para futuros ajustes de este hero: mobile y desktop son dos overlays independientes (tamaño, alineación y offset propios), no una única variante con clases responsivas — más verboso pero evita la clase de bug de "display" que ya salió dos veces. Ver [[Pendientes Claude]].
+
+---
+
 ### [2026-09-09] Botón del hero de vuelta dentro de la imagen (centrado abajo); sistema de botones sin gradientes
 
 **Contexto:** El usuario vio el botón "Explorar la tienda" en su propia franja debajo de la imagen (decisión inmediatamente anterior) y no le gustó — lo quería de vuelta encima de la imagen, tanto en mobile como en desktop.

@@ -24,7 +24,13 @@ export function HomeHero() {
         src="/images/imagen-home-destok.png"
       />
 
-      <div className="absolute inset-x-0 bottom-[6%] flex justify-center">
+      <div className="absolute inset-x-0 bottom-[8%] flex justify-start px-4 md:hidden">
+        <Link className={buttonStyles({ size: "sm" })} href="/tienda">
+          Explorar la tienda
+          <ChevronRightIcon className="h-4 w-4" />
+        </Link>
+      </div>
+      <div className="absolute inset-x-0 bottom-[6%] hidden justify-center md:flex">
         <Link className={buttonStyles({ size: "lg" })} href="/tienda">
           Explorar la tienda
           <ChevronRightIcon className="h-4 w-4" />
