@@ -27,6 +27,26 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Hero de home: imagen distinta por breakpoint (mobile vs. desktop), `aspect-ratio` en vez de altura fija en desktop
+
+**Contexto:** El usuario probó el hero recién implementado (ver decisión inmediatamente debajo, misma fecha) y pidió dos ajustes: 1) la imagen `imagen-home.png` se queda **solo para mobile**, pero "no se ve bien" — hacía falta que abarcara mejor la pantalla; 2) subió una imagen nueva, `imagen-home-destok.png` (2098×749, ratio ~2.8:1, misma composición pero más panorámica — el texto y la tarjeta "Pequeños detalles" quedan más separados de los bordes), para usar en desktop.
+
+**El problema real de fondo:** ambas imágenes traen texto de marketing dibujado cerca de los dos bordes horizontales (título a la izquierda, tarjeta "Pequeños detalles..." a la derecha). Con `object-cover` y una altura fija en píxeles (el patrón que se venía usando), el recorte necesario para llenar el ancho de pantalla variaba con el viewport de forma no lineal: en pantallas anchas (1280px+), una altura fija obliga a un zoom mayor de lo esperado (el recorte se vuelve "ancho-dominante" en vez de "alto-dominante"), lo que en la práctica **recortaba texto de un lado o el botón terminaba superpuesto sobre la última línea del párrafo** — se verificó con capturas reales en 768/1024/1280/1920px: con altura fija, 768 y 1024 se veían bien pero 1280 y 1920 mostraban el botón tapando "de la magia."
+
+**Opciones evaluadas:**
+- Seguir ajustando alturas fijas por breakpoint a mano (`md:min-h-[Xpx] lg:min-h-[Ypx]`), afinando por prueba y error para cada ancho común.
+- Usar `aspect-ratio` (Tailwind `aspect-[2098/749]`) igual a la proporción real del archivo, aplicado a la `<section>` completa (no al contenedor interno `max-w-7xl`) desde `md:` en adelante.
+
+**Decisión:** `aspect-ratio` en la sección, no en el contenedor interno. Con esto la altura del hero en desktop siempre es `ancho_de_pantalla / 2.801`, lo que garantiza que la imagen se muestra **completa, sin ningún recorte**, en cualquier ancho de escritorio — porque el contenedor y la imagen tienen exactamente la misma proporción, `object-cover` no tiene nada que recortar.
+
+**Por qué falló el primer intento con `aspect-ratio` en el contenedor interno:** se probó primero poner el `aspect-[2098/749]` en el `<div>` interno (el que tiene `max-w-7xl` y contiene el botón) en vez de en la `<section>`. Como ese div está acotado a 1280px de ancho máximo, calculaba una altura basada en su propio ancho limitado — mientras que las imágenes (`fill`, posicionadas respecto a la `<section>` completa) siguen ocupando el ancho real del viewport, mucho más ancho en pantallas grandes. Resultado: la altura calculada quedaba corta para el ancho real de la imagen, y volvía a recortar. Se corrigió moviendo `aspect-ratio` a la `<section>` (ancho real = viewport) y el contenedor interno pasó a `md:h-full` (se estira al 100% de la altura ya resuelta por la sección, en vez de calcular la suya propia).
+
+**Mobile no usa esta técnica a propósito:** en mobile se mantiene el patrón anterior (altura fija + `object-left`, ver decisión debajo) porque ahí SÍ se quiere recorte deliberado — mostrar la imagen completa sin recortar en un viewport angosto (390px de ancho / ~2:1 de aspect ratio) da una tira de ~192px de alto, demasiado corta para sentirse como un hero. Se subió la altura mobile de 300px a 450px (más "abarca la pantalla", como pidió el usuario) mantieniendo `object-left` para no perder el texto.
+
+**Impacto:** Verificado con Playwright en 390 (mobile), 768/1024/1280/1920 (desktop) — cero texto recortado, cero superposición del botón, en todos los anchos probados. Esta técnica (`aspect-ratio` en el contenedor full-bleed real, no en uno acotado) es la que debería usarse para cualquier hero futuro con imagen de fondo que traiga texto propio cerca de los bordes.
+
+---
+
 ### [2026-09-09] Hero de home reemplazado por imagen full-bleed con texto propio; se saca el `<h1>` HTML del overlay
 
 **Contexto:** El usuario pidió que la imagen principal del home (`imagen-home.png`, nueva, provista por él) llegara hasta las orillas completamente (antes vivía dentro de una tarjeta con `max-w-7xl`, padding y bordes redondeados) y que se quitara el botón secundario "Ver camitas propias" dejando solo "Explorar la tienda". Al implementarlo apareció un problema real: la imagen nueva **ya trae el copy de marketing dibujado adentro** ("Todo lo que tu mascota necesita", "En un solo lugar", la bajada, y la tarjeta "Pequeños detalles, grandes momentos" que antes era un `<div>` HTML aparte) — el `<h1>`/`<p>`/tarjeta decorativa de `HomeHero` quedaban superpuestos encima, duplicando el texto y viéndose roto.
