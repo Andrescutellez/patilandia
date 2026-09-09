@@ -6,7 +6,7 @@ tags:
   - contexto
   - patilandia
 status: activo
-updated: 2026-09-04 (Medusa instalado y conectado en local)
+updated: 2026-09-05 (pasada de diseño/mobile — logo, favicon, categorías con imagen, header simplificado)
 ---
 
 # Contexto Patilandia
@@ -75,9 +75,9 @@ Tokens en `src/app/globals.css` (`:root`):
 | `--font-display` | Baloo 2 | Títulos (redondeada, tierna, con carácter) |
 | `--font-body` | Nunito | Cuerpo de texto |
 
-El logo real (`public/images/patilandia/logo-patilandia.png`) ya muestra el concepto de marca completo: perro dorado + gato gris con corona y pañoleta, silueta de castillo morado detrás, huella y estrellas doradas, wordmark "Patilandia" en script morado con el slogan debajo. Las imágenes de producto (`hero-fantasy.png`, `royal-bed.png`, `galaxy-bed.png`, `forest-bed.png`, `safari-bed.png`, `dreams-bed.png`) son renders IA de mascotas reales sobre camas temáticas en escenarios de castillo/fantasía — **no fotos de stock genéricas**, ya siguen el lenguaje visual del brief (ver sección 4 y 7 de [[Patilandia — Brief Original]]).
+El logo real usado en el header desde 2026-09-05 es `public/images/patilandia/logo-rectangular.png` (lockup horizontal: ilustración perro+gato+castillo a la izquierda, wordmark "Patilandia" + slogan a la derecha) — reemplazó al PNG cuadrado original (`logo-patilandia.png`, que sigue vivo solo en el footer) tras un bug real de aspect-ratio que hacía crecer el header al cargar la página. Favicon propio también nuevo (`src/app/icon.png` + `apple-icon.png`, la "P" con corona). Las imágenes de producto (`hero-fantasy.png`, `royal-bed.png`, `galaxy-bed.png`, `forest-bed.png`, `safari-bed.png`, `dreams-bed.png`) son renders IA de mascotas reales sobre camas temáticas en escenarios de castillo/fantasía — **no fotos de stock genéricas**, ya siguen el lenguaje visual del brief (ver sección 4 y 7 de [[Patilandia — Brief Original]]). Las 7 categorías también tienen ahora foto propia (`categoria *.png`), ver [[Modelo de Datos y Mocks]].
 
-Detalle de tokens, componentes y patrones visuales en [[Design System]].
+Detalle de tokens, componentes y patrones visuales en [[Design System]]. Detalle de los cambios de logo/favicon/categorías/mobile de esta sesión en [[Decisiones y Razonamiento]] y en el estado rápido de [[SEGUNDO_CEREBRO]].
 
 ## Qué es real vs. qué es mock (actualizado 2026-09-04 — Medusa ya está conectado)
 

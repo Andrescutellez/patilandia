@@ -31,7 +31,7 @@ status: activo
 
 ```
 SiteShell (layout global)
-├── SiteHeader          — logo, nav, buscador (no funcional), favoritos/cuenta/carrito con badge
+├── SiteHeader          — logo centrado en mobile, nav, buscador (no funcional, solo desde md:), cuenta/carrito con badge (sin ícono de wishlist ni hamburguesa desde 2026-09-05)
 ├── SiteFooter          — nav, categorías, "promesa" de marca
 └── MobileBottomNav     — 5 accesos, solo mobile
 

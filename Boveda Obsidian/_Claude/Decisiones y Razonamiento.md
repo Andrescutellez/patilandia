@@ -27,6 +27,18 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Menú hamburguesa mobile restaurado — reversión parcial de la decisión del 2026-09-05
+
+**Contexto:** El usuario sintió que al header le faltaba el menú hamburguesa en mobile tras haberlo quitado el 2026-09-05 (ver decisión "Header mobile sin hamburguesa ni wishlist"). Pidió explícitamente devolverlo y dejar visible la lupa de búsqueda, sin darle funcionalidad todavía.
+
+**Decisión:** `SiteHeader` recupera el botón hamburguesa (`lg:hidden`) y el drawer desplegable con navegación + buscador, tal como existía antes del 2026-09-05. **No** se restauró el ícono de wishlist en el header — el usuario no lo pidió, y el bottom nav mobile lo sigue cubriendo.
+
+**Por qué:** El usuario prioriza la sensación de completitud del header sobre la redundancia con el bottom nav que había motivado quitarlo. El buscador queda visual-only (`<input>` sin `onChange`) a propósito — se implementa la lógica en una sesión futura.
+
+**Impacto:** El header vuelve a tener dos accesos a los mismos 5 destinos en mobile (hamburguesa + bottom nav) — redundancia consciente, aceptada por el usuario. `MenuIcon`/`CloseIcon` en `components/ui/icons.tsx` vuelven a estar en uso (el pendiente de "revisar si eliminarlos" queda obsoleto). Ver [[Pendientes Claude]].
+
+---
+
 ### [2026-09-03] Medusa como commerce backend headless, no un backend propio
 
 **Contexto:** El brief original ([[Patilandia — Brief Original]], sección 2) es explícito: "NO quiero construir otro backend de e-commerce desde cero."
@@ -149,6 +161,47 @@ tags:
 **Por qué:** `next/image` resuelve rutas relativas contra el `public/` del propio storefront sin importar de dónde vino el dato (Medusa o mock) — es exactamente el mismo mecanismo que ya funcionaba. Usar una URL absoluta (ej. `http://localhost:3000/images/...`) habría requerido configurar `images.remotePatterns` en `next.config.ts` y se habría roto en producción (el dominio cambia). Esto es válido mientras las imágenes sean las mismas del storefront; el día que haya fotografía real de producto subida a un storage (S3/Medusa File module), ahí sí tocará usar URLs absolutas y configurar `remotePatterns`.
 
 **Impacto:** `adaptMedusaProduct` se actualizó para leer `record.images` (array real de Medusa) y mapearlo a `galleryImages`, con fallback a `[thumbnail]` — antes solo usaba `thumbnail` repetido, así que esto también fue una mejora real del adaptador (la galería de producto ahora muestra múltiples imágenes reales en vez de una sola repetida).
+
+---
+
+### [2026-09-05] Header mobile sin hamburguesa ni wishlist — el bottom nav es la navegación mobile real
+
+**Contexto:** El header tenía un menú hamburguesa mobile que duplicaba exactamente lo que ya resuelve `MobileBottomNav` (Inicio, Categorías, Wishlist, Cuenta, Carrito), y un ícono de corazón/wishlist en el cluster de íconos de arriba.
+
+**Decisión:** Se eliminó el botón hamburguesa y todo su menú desplegable mobile de `SiteHeader`. Se eliminó el ícono de wishlist del header (desktop y mobile) — el usuario fue explícito: **solo del header**, el bottom nav mobile se queda con su propia pestaña de Wishlist tal cual estaba (no se tocó `MobileBottomNav`).
+
+**Por qué:** El bottom nav ya cubre navegación completa en mobile — mantener dos formas idénticas de llegar a los mismos 5 destinos era redundancia pura. El corazón en el header quedó fuera de scope de "el resto te lo dejo a ti" porque el usuario pidió explícitamente sacarlo solo de ahí, dejando la pestaña de wishlist del bottom nav intacta — es una decisión deliberadamente asimétrica, no un descuido.
+
+**Impacto:** Quitar la hamburguesa se llevó consigo el único lugar donde el buscador aparecía en mobile (vivía dentro del menú desplegable). El usuario confirmó explícitamente "sin buscador en mobile por ahora" al preguntárselo — no agregar un ícono de lupa sin que lo pidan. Ver [[Pendientes Claude]].
+
+---
+
+### [2026-09-05] Logo cuadrado reemplazado por lockup rectangular — bug de aspect-ratio real, no solo estético
+
+**Contexto:** El header se veía "muy grande o vacío". Investigando, el HTML real de Next.js mostraba `width="220" height="80"` en el `<Image>` del logo, pero el archivo real (`logo-patilandia.png`) era un cuadrado perfecto de 1254×1254px. El navegador reserva espacio con el ratio declarado (220:80) al inicio y, al cargar la imagen real, recalcula el alto `auto` usando el ratio REAL del archivo (1:1) — el logo saltaba de ~51px a ~140px de alto tras la carga, inflando el header.
+
+**Opciones evaluadas:**
+- Solo arreglar el bug de proporción y mostrar el logo cuadrado completo como insignia compacta (~48px) — el nombre "Patilandia" queda ilegible a ese tamaño.
+- Recortar solo la porción de texto del PNG cuadrado existente — inviable limpio: las patas de las mascotas se superponen físicamente con las letras en el diseño original, no hay línea de corte limpia (se probó, quedaban fragmentos de patas sueltos).
+- Usar el nuevo `logo-rectangular.png` que el usuario subió (lockup horizontal: ilustración a la izquierda, wordmark + slogan a la derecha, 1512×600px).
+
+**Decisión:** La tercera opción — `Logo` ahora usa `logo-rectangular.png` con `width={1512} height={600}` (coincide exactamente con el archivo real) y `h-16 w-auto` (antes `w-[140px] h-auto`, la causa raíz del bug).
+
+**Por qué:** Es la única opción que resuelve el bug de raíz (proporción declarada = proporción real, sin saltos de layout) Y mantiene el wordmark "Patilandia" legible a tamaño de header — el PNG cuadrado viejo nunca pudo lograr ambas cosas a la vez.
+
+**Impacto:** El PNG cuadrado original (`logo-patilandia.png`) sigue existiendo y se sigue usando en el footer (aunque ahí el intento de invertir el texto a blanco vía CSS `[&_span]` nunca funcionó — el `Logo` solo renderiza una `<Image>`, no hay `<span>`s que targetear; problema preexistente, no introducido ahora, documentado pero no arreglado por no ser lo pedido).
+
+---
+
+### [2026-09-05] Grids de producto/colección en 2 columnas desde el primer breakpoint, no desde `sm:`
+
+**Contexto:** Pedido explícito del usuario: "que las cards de productos hayan 2 por fila" en mobile. Todos los grids (`ProductCard`, `CollectionCard`) usaban `sm:grid-cols-2` — es decir, 1 columna en cualquier pantalla menor a 640px, que es literalmente todo el rango de teléfonos reales.
+
+**Decisión:** Cambiar la clase base a `grid-cols-2` (sin el prefijo `sm:`) en los 7 grids afectados, y hacer `ProductCard`/`CollectionCard` responsive de verdad (`sm:` como el breakpoint que agranda texto/padding, no el que activa 2 columnas).
+
+**Por qué:** A ~160-170px de ancho de card (2 columnas en un teléfono de 375-428px), el contenido pensado para cards de ancho completo se ve apretado o se desborda — nombre de producto en `text-3xl`, botón "Agregar al carrito" en `text-sm px-5`. En vez de solo cambiar el grid y dejar que se vea mal, se ajustó cada pieza de `ProductCard` con un par de tamaños (compacto por defecto, tamaño original desde `sm:`), incluyendo que el botón diga solo **"Agregar"** en mobile y **"Agregar al carrito"** desde `sm:` — evita que el texto se parta en dos líneas en una tarjeta angosta.
+
+**Impacto:** Cualquier componente nuevo de tarjeta que se agregue debería seguir el mismo patrón (base = mobile compacto, `sm:` = tamaño "normal") en vez de asumir que el contenido cabe igual a cualquier ancho de card.
 
 ---
 

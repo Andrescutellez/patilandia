@@ -90,9 +90,28 @@ Sigue exactamente el sistema que pide el brief sección 7: **imagen → fondo Pa
 
 Este mismo mapa `themeMap`/`overlayMap` por colección se repite en `CollectionCard` (con overlays de gradiente sobre la imagen en vez de fondo detrás) — es un patrón de diseño consistente, no una casualidad de un solo componente.
 
+### Responsive de `ProductCard` (actualizado 2026-09-05)
+
+Desde que los grids pasaron a 2 columnas en mobile (ver [[Decisiones y Razonamiento]]), `ProductCard` tiene dos escalas — compacta por defecto (mobile, cards de ~160-170px), tamaño "normal" desde `sm:` (640px, donde el card ya tiene 250px+ de ancho):
+
+| Elemento | Mobile (base) | Desde `sm:` |
+|---|---|---|
+| Padding interno | `p-3` | `p-5` |
+| Nombre del producto | `text-lg` | `text-2xl` (`lg:text-3xl`) |
+| Categoría (label) | `text-[10px]` | `text-xs` |
+| Precio | `text-lg` | `text-2xl` |
+| Badge / botón wishlist | más chicos y pegados a la esquina (`left-2 top-2`, `h-8 w-8`) | tamaño original (`left-4 top-4`, `h-10 w-10`) |
+| Botón CTA | dice solo **"Agregar"** (`size="sm"`) | dice **"Agregar al carrito"** completo |
+
+El botón CTA usa dos `<span>` (`hidden sm:inline` / `sm:hidden`) para el texto — evita que "Agregar al carrito" se parta en dos líneas en una tarjeta angosta, sin depender de cálculos de ancho de fuente.
+
+## Categorías con imagen (2026-09-05)
+
+Las categorías (`Category.image`, opcional) ahora pueden traer una foto ilustrada propia en vez de solo el ícono SVG plano de `CategoryIcon`. Se renderiza como `next/image fill object-cover` dentro de un contenedor `relative overflow-hidden rounded-full` (mismo círculo que antes tenía el ícono) — si no hay `image`, cae al `CategoryIcon` de siempre (hoy solo pasa con categorías que no tengan foto subida). Usado en `CategoryStrip` (home, 80px), `CatalogView` (chips de categoría, 56px) y `categorias/page.tsx` (56px). Ver [[Modelo de Datos y Mocks]] para la lista de imágenes por categoría.
+
 ## Iconografía (`components/ui/icons.tsx`)
 
-Set propio de SVG inline (sin librería externa tipo lucide/heroicons) construidos sobre un wrapper `Svg` común. Inventario: `MenuIcon`, `CloseIcon`, `SearchIcon`, `UserIcon`, `HeartIcon`, `CartIcon`, `PawIcon`, `SparklesIcon`, `CrownIcon`, `TruckIcon`, `ShieldIcon`, `StarIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `MinusIcon`, `PlusIcon`, `FilterIcon`, `HomeIcon`, `GridIcon`, `ShirtIcon`, más `CategoryIcon` (dispatcher que mapea el string `icon` de cada categoría — `bed`, `ball`, `bowl`, `treat`, `collar`, `brush`, `carrier`, `shirt` — al SVG correspondiente).
+Set propio de SVG inline (sin librería externa tipo lucide/heroicons) construidos sobre un wrapper `Svg` común. Inventario: `SearchIcon`, `UserIcon`, `HeartIcon`, `CartIcon`, `PawIcon`, `SparklesIcon`, `CrownIcon`, `TruckIcon`, `ShieldIcon`, `StarIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `MinusIcon`, `PlusIcon`, `FilterIcon`, `HomeIcon`, `GridIcon`, `ShirtIcon`, más `CategoryIcon` (dispatcher que mapea el string `icon` de cada categoría — `bed`, `ball`, `bowl`, `collar`, `brush`, `carrier`, `shirt` — al SVG correspondiente, usado como fallback cuando la categoría no tiene `image`). `MenuIcon`/`CloseIcon` siguen exportados pero **ya no se usan en ningún lado** desde que se quitó el menú hamburguesa del header (2026-09-05) — candidatos a limpiar si nadie más los importa.
 
 ## Layout global (`SiteShell`)
 
@@ -103,13 +122,26 @@ SiteFooter (gradiente morado oscuro, siempre al final)
 MobileBottomNav (fixed bottom, solo <768px, 5 accesos: Inicio/Categorías/Wishlist/Cuenta/Carrito)
 ```
 
+### `SiteHeader` — actualizado 2026-09-05, sin hamburguesa
+
+- **Logo**: `logo-rectangular.png` (lockup horizontal: ilustración + wordmark, 1512×600px real), `h-16 w-auto`, `py-2`. Ya no usa el PNG cuadrado viejo (`logo-patilandia.png`, que sigue existiendo pero solo se usa en el footer).
+- **Sin menú hamburguesa**: se eliminó por completo (botón + dropdown mobile con buscador+nav). El `MobileBottomNav` es la única navegación en mobile.
+- **Logo centrado en mobile**: el contenedor del header es `grid grid-cols-[1fr_auto_1fr] items-center` por debajo de `lg:` (un div vacío a la izquierda balancea el ancho real del cluster de íconos a la derecha, centrando el logo matemáticamente sin importar cuántos íconos haya) y vuelve a `flex` normal desde `lg:` (logo izquierda, nav, buscador, íconos — layout desktop sin cambios).
+- **Sin ícono de wishlist en el header** (ni desktop ni mobile) — solo quedan Cuenta y Carrito en el cluster de íconos. El corazón de wishlist sigue vivo en `MobileBottomNav` (decisión asimétrica explícita, ver [[Decisiones y Razonamiento]]).
+- **Buscador solo desde `md:`** (768px) — no existe ningún acceso a búsqueda por debajo de ese ancho desde que se quitó la hamburguesa (decisión consciente, no bug).
+
+### Favicon (nuevo 2026-09-05)
+
+- `src/app/icon.png` (512×512) y `src/app/apple-icon.png` (180×180) — convención de Next.js App Router, autodetectados sin config manual. Generados recortando `public/images/patilandia/favicon.png` (la "P" con corona y patita) con distinto padding cada uno (8% para el favicon normal, 16% para el apple-touch-icon porque iOS redondea las esquinas automáticamente).
+- Sin `apple-icon.png`, iOS/Android no mostraban ningún ícono en mobile — es un archivo aparte de `icon.png`, no basta con tener uno solo.
+
 `body` tiene `padding-bottom: 88px` en mobile (`@media max-width: 767px`) para no quedar tapado por el `MobileBottomNav` fijo — detalle de responsive ya resuelto.
 
 ## Responsive — patrón observado (no es "reducir desktop")
 
-- Header: buscador y nav completa solo desde `lg:`, hamburguesa + logo en mobile, buscador propio dentro del menú desplegable mobile.
-- Bottom nav dedicado solo mobile (`md:hidden`), reemplaza la necesidad de accesos rápidos en el header en pantallas chicas.
-- Grids de producto: `sm:grid-cols-2` → `xl:grid-cols-3` (catálogo) o `xl:grid-cols-5` (colecciones) — nunca 1 sola columna forzada salvo mobile real.
+- Header (actualizado 2026-09-05): nav completa y buscador solo desde `lg:`/`md:` respectivamente; en mobile el logo va centrado (grid `[1fr_auto_1fr]`) y solo quedan los íconos de Cuenta y Carrito — sin hamburguesa, sin buscador, sin wishlist.
+- Bottom nav dedicado solo mobile (`md:hidden`), es la única navegación mobile (ya no hay una segunda copia en un menú hamburguesa).
+- Grids de producto/colección (actualizado 2026-09-05): **2 columnas desde el primer breakpoint** (`grid-cols-2`), no desde `sm:` — sube a 3 (`xl:grid-cols-3`, catálogo/destacados), 4 (`lg:grid-cols-4`, relacionados/wishlist) o 5 (`xl:grid-cols-5`, colecciones) en pantallas más grandes. Antes era 1 columna hasta 640px; se corrigió a pedido explícito del usuario. `ProductCard`/`CollectionCard` tienen su propia escala compacta en mobile para que el contenido no se vea apretado a ~160px de ancho (ver sección Product Card arriba).
 - Catálogo: filtros en sidebar fija `lg:block` en desktop, colapsados detrás de un botón "Filtros" en mobile (`mobileFiltersOpen` state).
 
 Tags: #design-system #ui #marca

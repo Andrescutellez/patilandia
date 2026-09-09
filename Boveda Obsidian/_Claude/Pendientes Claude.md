@@ -19,7 +19,7 @@ status: activo
 
 ## Alta prioridad (brechas directas del brief)
 
-- [ ] **Buscador del header no funcional** — `SiteHeader` tiene un `<input type="search">` sin `onChange`/estado; no filtra ni navega a `/tienda?buscar=...`. El brief (sección 6) lo pide explícitamente como parte del header.
+- [ ] **Buscador del header no funcional** — `SiteHeader` tiene un `<input type="search">` sin `onChange`/estado (no filtra ni navega a `/tienda?buscar=...`), tanto en la barra desktop (`md:`) como en el drawer mobile (ver 2026-09-09). El brief (sección 6) lo pide explícitamente como parte del header.
 - [ ] **Catálogo — filtro de precio** — `CatalogView` filtra por tamaño, tipo de mascota, categoría, búsqueda y orden, pero **no** por rango de precio (brief sección 8 lo pide explícitamente).
 - [ ] **Catálogo — filtro de disponibilidad** — no existe filtro por stock/disponibilidad (brief sección 8), aunque `StorefrontProduct.stock` ya existe como campo.
 - [ ] **Catálogo — paginación / carga progresiva** — `CatalogView` renderiza todos los `visibleProducts` de una vez, sin paginar ni infinite scroll (brief sección 8).
@@ -31,6 +31,12 @@ status: activo
 - [ ] **Animaciones/microinteracciones** — brief sección 13 sugiere Framer Motion "si aporta valor" para fades/slides de entrada de sección. Hoy solo hay transiciones CSS (`hover:-translate-y-1`, `transition duration-300`). No está instalado `framer-motion` ni `motion`.
 - [ ] **`/cuenta` sin lógica** — es un placeholder visual (4 tarjetas estáticas), correcto para esta fase pero sin ningún hook hacia auth/clientes de Medusa todavía.
 - [ ] **Sin tests** — no hay Jest/Vitest/Playwright configurado. El brief no lo exige explícitamente pero sección 17 pide "calidad de código" y "arquitectura limpia".
+
+## Nuevo tras la pasada de diseño/mobile (2026-09-05)
+
+- [ ] **Re-sincronizar el catálogo real de Medusa con el storefront** — `patilandia-backend/apps/backend/src/scripts/patilandia-seed.ts` todavía crea la categoría "Snacks" y no tiene los campos de imagen nuevos; el storefront (`data/mock-store.ts`) ya no tiene "Snacks" (eliminada, `snack-crunch-pollo` ahora es "Alimentos"). Mientras no se re-corra un seed actualizado, el Medusa real y los mocks del storefront están desalineados en categorías.
+- [ ] **Wishlist consolidado a medias** — se quitó el ícono de corazón del header (desktop y mobile), pero el bottom nav mobile sigue con su propia pestaña de Wishlist independiente de Cuenta (decisión explícita: solo tocar el header, no el bottom nav). Si más adelante se quiere unificar wishlist dentro de Cuenta, falta tocar `MobileBottomNav` y `AccountPage`.
+- [x] ~~`MenuIcon`/`CloseIcon` sin usar~~ — vuelven a estar en uso, ver 2026-09-09 abajo.
 
 ## Roadmap Patilandia Admin (2026-09-04 — solo diagnóstico, nada construido)
 
@@ -64,6 +70,11 @@ Ver [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] para el diagnó
 
 ## Completados
 
+- [x] **2026-09-09 — Menú hamburguesa mobile restaurado.** `SiteHeader` recupera el botón hamburguesa (`lg:hidden`) y el drawer con navegación + buscador visual (lupa + input, sin `onChange` todavía). Wishlist se queda fuera del header, como en el rediseño del 2026-09-05. Ver [[Decisiones y Razonamiento]].
+- [x] **2026-09-05 — Logo real + favicon completo.** Arreglado el bug de aspect-ratio del logo (declaraba 220×80, el archivo real era 1254×1254 cuadrado — causaba que el header saltara de tamaño al cargar); reemplazado por `logo-rectangular.png` (lockup horizontal). Agregado `src/app/apple-icon.png` (180×180) — sin él, iOS/Android no mostraban ícono. `icon.png` regenerado más grande y con menos padding.
+- [x] **2026-09-05 — Categorías con imágenes reales, "Snacks" eliminada.** 7 categorías con foto propia cada una (antes ícono SVG plano). `snack-crunch-pollo` reasignado a "Alimentos". Grids de 8→7 columnas donde correspondía.
+- [x] **2026-09-05 — Mobile-first en cards de producto y colección.** Todos los grids de `ProductCard`/`CollectionCard` pasan a 2 columnas desde el primer breakpoint (antes 1 columna hasta 640px). `ProductCard` responsive real: paddings, tamaños de texto, badge, botón wishlist y botón "Agregar"/"Agregar al carrito" (se acorta en mobile) todos con `sm:` breakpoint.
+- [x] **2026-09-05 — Header simplificado.** Sin menú hamburguesa (bottom nav mobile ya cubre navegación), logo centrado en mobile vía grid `[1fr_auto_1fr]`, sin ícono de wishlist en el header (queda solo en bottom nav mobile).
 - [x] **2026-09-04 — Instalar y conectar Medusa.** Backend Medusa 2.20.1 corriendo en local (`patilandia-backend`, repo hermano), Postgres en Docker (puerto 5433, evitando conflicto con una instancia nativa de Postgres ya presente en la máquina), usuario admin creado, publishable key generada y linkeada al Default Sales Channel. Ver [[Entorno de Desarrollo Local]].
 - [x] **2026-09-04 — Migrar los 8 productos Patilandia a Medusa.** Catálogo demo genérico de Medusa (camisetas) borrado (soft-delete); los 8 productos reales creados vía workflows oficiales con `metadata` fiel al esquema que `adaptMedusaProduct` ya esperaba — cero regresión visual. Ver [[Decisiones y Razonamiento]].
 - [x] **2026-09-04 — `HomePage` y `WishlistPage` ya no rompen la capa de adaptación.** `HomePage` es ahora `async` y usa `getHomepageProducts()`/`getHomepageCollections()` de `lib/storefront.ts`; `WishlistRoute` hace `await getStorefrontProducts()` y pasa los productos como prop a `WishlistPage`. Las 9 rutas pasan consistentemente por `lib/storefront.ts`.

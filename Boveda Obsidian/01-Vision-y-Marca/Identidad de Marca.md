@@ -40,16 +40,21 @@ Frase-guía para cualquier decisión de tono: *"Entré a un mundo creado para mi
 
 Morado/lavanda como color principal, dorado como acento, tonos crema/blanco para superficies, texto oscuro para legibilidad. El morado **no es negociable** como color central — no introducir paletas alternativas sin razón explícita del usuario.
 
-## Logo
+## Logo (actualizado 2026-09-05 — ya existe la versión wordmark que faltaba)
 
-`public/images/patilandia/logo-patilandia.png` — versión completa ya diseñada: perro dorado sonriente con corona y pañoleta morada + gato gris con corona pequeña y collar dorado, silueta de castillo morado de fondo con banderines, huella blanca sobre la pañoleta, destellos dorados alrededor, wordmark "Patilandia" en letras redondeadas script-bold moradas con detalle de huella en la "P", slogan en morado más claro debajo con guiones decorativos a los lados.
+Dos versiones reales del logo conviven hoy en `public/images/patilandia/`:
 
-Usado en dos contextos hoy:
-- **Header** (`SiteHeader`, `Logo` component): imagen completa a 140px de ancho.
-- **Footer** (`SiteFooter`): mismo componente `Logo`, pero con clases Tailwind que invierten el wordmark a blanco/blanco-70 sobre el fondo morado oscuro del footer (`[&_span:last-child]:text-white/70 [&_span:first-child]:text-white`).
+- **`logo-rectangular.png`** (1512×600px, lockup horizontal) — perro dorado con corona + gato gris con collar dorado y castillo morado a la izquierda, wordmark "Patilandia" + slogan "Un mundo hecho para ellos." a la derecha. **Este es el que usa el header** (`Logo` component, `h-16 w-auto`) — resuelve el gap que existía antes (brief pedía poder usar "versión completa" y "wordmark"; este lockup horizontal cumple ambas funciones a la vez, ilustración + texto lado a lado en vez de apilados).
+- **`logo-patilandia.png`** (1254×1254px, cuadrado) — la versión original: mismo concepto pero con el wordmark apilado DEBAJO de la ilustración en vez de al lado. Sigue usándose en el **footer** (`SiteFooter`), aunque ahí el intento de invertir el texto a blanco vía CSS (`[&_span]:text-white`) nunca funcionó — `Logo` solo renderiza una `<Image>`, no hay `<span>`s reales que ese selector pueda alcanzar. Problema preexistente, no crítico (el texto morado oscuro sobre el fondo navy del footer tiene contraste bajo pero no es ilegible), documentado en [[Decisiones y Razonamiento]].
 
-> [!warning] Gap conocido
-> El brief pide que el logo pueda usarse "tanto en versión completa como wordmark" (texto solo, sin ilustración). Hoy solo existe el PNG de versión completa — no hay un asset de wordmark-only separado. Si se necesita en un contexto muy angosto (favicon, loading state), habría que generarlo.
+> [!info] Bug de aspect-ratio corregido (2026-09-05)
+> El header llegó a mostrarse "muy grande o vacío" porque el código declaraba un `width`/`height` en `next/image` que NO coincidía con las dimensiones reales del archivo — el navegador reservaba un espacio angosto al inicio y saltaba a un espacio más alto al cargar la imagen real. Ver [[Decisiones y Razonamiento]] para el diagnóstico completo. Lección para cualquier imagen nueva que se agregue: los props `width`/`height` de `next/image` deben coincidir con la proporción REAL del archivo, no con el tamaño que se quiere mostrar en pantalla (eso se controla aparte, con CSS).
+
+## Favicon (nuevo 2026-09-05)
+
+`public/images/patilandia/favicon.png` — la "P" de Patilandia sola, con corona y huella blanca adentro, sin el resto de la ilustración ni el wordmark. Es el ícono más reducible de la marca (funciona incluso a 16px). De ahí se generaron dos derivados en `src/app/` (convención de Next.js, autodetectados):
+- `icon.png` (512×512) — favicon estándar de pestaña.
+- `apple-icon.png` (180×180) — ícono de pantalla de inicio/pestaña en iOS y Android. Sin este archivo separado, el sitio no mostraba ningún ícono en mobile — no basta con `icon.png` solo.
 
 ## Assets de producto ya generados
 
@@ -65,6 +70,8 @@ Todas en `public/images/patilandia/`, estilo consistente "mascota real + escenar
 | `dreams-bed.png` | Colección Dreams | Tema luna/nube nocturno |
 
 Esto ya cumple el brief sección 7: "los productos deben visualizarse sobre fondos consistentes con Patilandia, no sobre fotografías aleatorias de proveedores" — aunque hoy son renders IA usados como **mock/placeholder**, no fotografía de producto real todavía (correcto según brief sección 4, que permite mock explícitamente separado de datos reales).
+
+**Imágenes de categoría (nuevas 2026-09-05):** `categoria camas.png`, `categoria juguetes.png`, `categoria comida.png`, `categoria accesorios.png`, `categoria higiene.png`, `categoria viaje.png`, `categoria ropa.png` — mismo estilo (halo circular pastel + producto/escena flotando), una por categoría del catálogo. Ver [[Modelo de Datos y Mocks]] y [[Design System]] para cómo se usan.
 
 ## Rutas y copy en español
 

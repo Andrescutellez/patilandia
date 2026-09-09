@@ -49,20 +49,22 @@ export interface StorefrontProduct {
 
 `price`/`compareAtPrice` están en pesos colombianos como entero (ej. `149900` = $149.900 COP), formateados con `formatCurrency()` (`Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })`).
 
-## Categorías (8, `data/mock-store.ts`)
+## Categorías (7, `data/mock-store.ts` — actualizado 2026-09-05, "Snacks" eliminada)
 
-| Slug | Nombre | Tagline |
-|---|---|---|
-| `camitas` | Camitas | "Descanso con magia" |
-| `juguetes` | Juguetes | "Diversión encantada" |
-| `alimentos` | Alimentos | "Nutrición feliz" |
-| `snacks` | Snacks | "Premios con cariño" |
-| `accesorios` | Accesorios | "Estilo y comodidad" |
-| `higiene` | Higiene | "Rutinas suaves" |
-| `transporte` | Transporte | "Viajes tranquilos" |
-| `ropa` | Ropa | "Capas encantadas" |
+| Slug | Nombre | Tagline | Imagen |
+|---|---|---|---|
+| `camitas` | Camitas | "Descanso con magia" | `categoria camas.png` |
+| `juguetes` | Juguetes | "Diversión encantada" | `categoria juguetes.png` |
+| `alimentos` | Alimentos | "Nutrición feliz" | `categoria comida.png` |
+| `accesorios` | Accesorios | "Estilo y comodidad" | `categoria accesorios.png` |
+| `higiene` | Higiene | "Rutinas suaves" | `categoria higiene.png` |
+| `transporte` | Transporte | "Viajes tranquilos" | `categoria viaje.png` |
+| `ropa` | Ropa | "Capas encantadas" | `categoria ropa.png` |
 
-Cubre el roadmap completo del brief sección 1 (camas, cojines/mantas ≈ camitas+accesorios, juguetes, alimentación, snacks, higiene, accesorios) — solo `ropa` y `transporte` son adiciones no mencionadas explícitamente en el brief pero coherentes con la categoría "accesorios para paseos".
+Todas las rutas de imagen son `/images/patilandia/categoria <nombre>.png` (con espacio literal en el nombre de archivo). Cada una es una foto ilustrada propia (estilo Patilandia: halo circular de gradiente pastel + producto/escena flotando) que reemplaza al ícono SVG plano de `CategoryIcon` — ver [[Design System]]. `CategoryIcon` se mantiene como fallback en el tipo (`Category.image` es opcional) por si se agrega una categoría nueva sin foto todavía.
+
+> [!warning] "Snacks" se eliminó el 2026-09-05
+> La categoría `snacks` (icon `treat`) se quitó porque no llegó imagen para ella. El producto `snack-crunch-pollo`, que antes tenía `categorySlug: "snacks"`, se reasignó a `categorySlug: "alimentos"` / `categoryLabel: "Alimentos"` para no dejarlo huérfano (decisión de Claude al ejecutar el pedido, no explícitamente indicada por el usuario — avisar si se prefiere otra categoría). El catálogo real ya migrado a Medusa (`patilandia-seed.ts`) **todavía no se actualizó** con este cambio — sigue teniendo "Snacks" como categoría Medusa nativa. Ver [[Pendientes Claude]].
 
 ## Colecciones (5 "themes" visuales, no categorías de producto)
 
@@ -87,7 +89,7 @@ Las colecciones son un eje transversal de estilo visual (cada producto tiene un 
 | `camita-luna-estrellas` | Camita Luna y Estrellas | Camitas | dreams | $129.900 (antes $149.900) | `standard` / 2.2kg |
 | `camita-personalizada-luna` | Camita Personalizada Luna | Camitas | dreams | $179.900 (antes $209.900) | `custom` / 4.4kg — producto propio diferencial, personalizable |
 | `cojin-artesanal-nube` | Cojín Artesanal Nube | Accesorios | dreams | $69.900 (antes $89.900) | `standard` / 1.1kg |
-| `snack-crunch-pollo` | Snack Crunch Pollo | Snacks | royal | $25.900 (antes $31.900) | `heavy` / **8.5kg** — deliberadamente pesado, valida el camino de cotización especial en [[Shipping — Arquitectura de Envíos]] |
+| `snack-crunch-pollo` | Snack Crunch Pollo | Alimentos *(era Snacks, reasignado 2026-09-05)* | royal | $25.900 (antes $31.900) | `heavy` / **8.5kg** — deliberadamente pesado, valida el camino de cotización especial en [[Shipping — Arquitectura de Envíos]] |
 
 `createProduct()` es un factory con defaults compartidos (materiales, cuidados, highlights, 4 tallas, 3 colores) — cada producto solo sobreescribe lo que lo distingue. Todos con `featured: true` salvo que se sobreescriba explícitamente (ninguno lo hace hoy — los 6 primeros del array son los que aparecen en `getHomepageProducts()`/`getFeaturedProducts(6)`).
 

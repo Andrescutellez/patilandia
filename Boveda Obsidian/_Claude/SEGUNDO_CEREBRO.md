@@ -52,6 +52,18 @@ Al iniciar una conversación, leer en orden:
 
 ---
 
+## Estado rápido al 2026-09-05 — pasada de diseño y mobile en el storefront
+
+Sesión de ajustes visuales rápidos sobre `patilandia` (no `patilandia-backend`), a pedido directo del usuario mientras navegaba el sitio en el browser:
+
+- **Logo real arreglado**: bug de aspect-ratio corregido (el PNG cuadrado 1254×1254 tenía declarado un ratio falso 220:80, causando que el header saltara de tamaño al cargar) y reemplazado por `logo-rectangular.png` (lockup horizontal nuevo que subió el usuario). Tamaño final `h-16` con `py-2` de aire.
+- **Favicon real**: `src/app/icon.png` (512×512, recorte ajustado) + `src/app/apple-icon.png` nuevo (180×180) — sin el segundo, iOS/Android no mostraban ícono en mobile/pantalla de inicio.
+- **Categorías con imágenes reales**: 7 categorías (se eliminó "Snacks") con foto ilustrada propia cada una; el producto `snack-crunch-pollo` se reasignó a "Alimentos". Grids ajustados de 8 a 7 columnas.
+- **Mobile-first en cards de producto**: todos los grids de `ProductCard`/`CollectionCard` pasan a 2 columnas desde el primer breakpoint (antes 1 columna hasta 640px). `ProductCard` se hizo responsive de verdad (paddings, tamaños de texto, botón "Agregar" que se acorta en mobile).
+- **Header simplificado**: sin menú hamburguesa (el bottom nav mobile ya cubre la navegación), logo centrado en mobile vía grid de 3 columnas simétricas, sin ícono de corazón/wishlist en el header (se queda solo en el bottom nav mobile — decisión explícita del usuario, no tocar el bottom nav).
+
+**Deuda técnica nueva a vigilar:** el catálogo real en Medusa (`patilandia-seed.ts`) todavía tiene el esquema VIEJO de categorías (con "Snacks", sin las imágenes nuevas) — no se volvió a correr el seed tras estos cambios. Ver [[Pendientes Claude]].
+
 ## Estado rápido al 2026-09-04 (noche) — diagnóstico de Medusa Admin
 
 El usuario pidió llevar el diseño del storefront al admin de Medusa. Investigación (código instalado + discusiones oficiales sin resolver del repo de Medusa) confirmó que **no hay forma soportada de re-temear el dashboard nativo globalmente**, y que forkearlo o construir un admin propio completo tienen costos altos que el usuario no quiere asumir todavía. Se acordó una **estrategia híbrida**: admin nativo de Medusa para todo lo estándar, extensiones propias (widgets/routes/módulos custom) para lo diferencial de Patilandia (mascotas, proveedores, envío por peso, fidelización, suscripciones), diseñadas desde el día uno para que un futuro "Patilandia Admin" separado no requiera rehacer el backend. Diagnóstico completo y roadmap de 7 fases en [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]]. **Nada de esto está construido todavía** — es solo el plan, a ejecutar fase por fase en sesiones futuras.
