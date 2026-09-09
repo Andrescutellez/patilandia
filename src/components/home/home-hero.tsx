@@ -30,7 +30,7 @@ export function HomeHero() {
           <ChevronRightIcon className="h-4 w-4" />
         </Link>
       </div>
-      <div className="absolute inset-x-0 bottom-[6%] hidden justify-center md:flex">
+      <div className="absolute inset-x-0 bottom-[8%] hidden justify-start px-10 md:flex lg:px-14">
         <Link className={buttonStyles({ size: "lg" })} href="/tienda">
           Explorar la tienda
           <ChevronRightIcon className="h-4 w-4" />

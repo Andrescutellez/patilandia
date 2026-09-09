@@ -25,7 +25,21 @@ tags:
 
 ---
 
-## Decisiones registradas
+### [2026-09-09] Bug real: `a { color: inherit }` sin `@layer` rompía `text-white` (y cualquier color de texto) en todos los `<Link>` del sitio
+
+**Contexto:** El usuario dijo que el botón del hero "no está con letras blancas" a pesar de que `buttonStyles` sí tenía `text-white`. Se verificó con `getComputedStyle` en vez de confiar en capturas de pantalla — el color real era `rgb(34, 48, 95)` (`--ink`, texto oscuro), no blanco.
+
+**Causa raíz:** `globals.css` tiene `a { color: inherit; text-decoration: none; }` declarado **fuera de cualquier `@layer`**, después de `@import "tailwindcss"`. Tailwind v4 declara sus propias capas (`@layer theme, base, components, utilities`). En CSS, **las reglas sin capa (unlayered) le ganan a cualquier regla dentro de una capa, sin importar la especificidad** — así que ese `a { color: inherit }` (especificidad bajísima, un selector de elemento) le ganaba a `.text-white` (una utilidad de Tailwind, especificidad de clase, mucho más alta) porque vive en la capa `utilities`. Este bug llevaba presente desde el inicio del proyecto (la regla ya estaba en la carga inicial), afectando a **cualquier** `<Link>`/`<a>` con una utilidad de color de texto de Tailwind aplicada directamente — no solo el botón del hero.
+
+**Por qué no se había notado antes:** la mayoría de los colores de texto usados en `<Link>`s (`--ink`, `--brand-violet-deep`) son tonos oscuros parecidos entre sí — visualmente casi indistinguibles en una captura rápida. El caso del botón (blanco vs. `--ink` oscuro) sí debía notarse a simple vista, pero en las capturas de Playwright revisadas antes se leyó como "blanco" sin verificar el color real con DevTools/`getComputedStyle`.
+
+**Fix:** envolver esa regla (y `button, input, select { font: inherit }`) en `@layer base { ... }` en `globals.css`. Así queda en la capa `base`, que Tailwind coloca **antes** de `utilities` en el orden de capas — cualquier utilidad de color (`text-white`, `text-[var(--brand-violet-deep)]`, etc.) vuelve a ganarle normalmente por especificidad, como se espera.
+
+**Bug relacionado encontrado de paso (mismo síntoma, causa distinta):** el estado "activo" de los links de navegación (`HeaderLink` en `site-header.tsx`, ítems de `mobile-bottom-nav.tsx`) nunca mostraba el violeta de "página actual" — tenían **dos clases de color de texto a la vez** en el mismo elemento (`text-[var(--ink)]` fijo + `text-[var(--brand-violet-deep)]` condicional cuando está activo), y como ambas son utilidades dentro de la misma capa `utilities` con la misma especificidad, cuál gana depende del orden de generación interno de Tailwind, no de cuál aparece primero en el string de clases — en este caso ganaba `--ink` casi siempre. Se corrigió haciendo las clases mutuamente excluyentes (`isActive ? "...violeta" : "...ink"` en vez de apilar ambas). Verificado con `getComputedStyle`: el link activo ahora sí devuelve `rgb(32, 48, 141)` (`--brand-violet-deep`).
+
+**Impacto:** Corrección de raíz, no un parche — cualquier futuro `<Link>` con color de texto por utilidad ahora funciona como se espera, sin tener que acordarse de este detalle de capas. Lección para code review futuro: **nunca confiar en el color de una captura de pantalla como prueba definitiva** — verificar con `getComputedStyle` cuando el usuario reporta que un color "no se ve como debería", puede haber una capa de CSS ganándole a la utilidad sin que se note a simple vista.
+
+---
 
 ### [2026-09-09] Botón del hero: tamaño y posición distintos en mobile vs. desktop
 

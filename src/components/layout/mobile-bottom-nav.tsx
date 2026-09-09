@@ -31,8 +31,8 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               className={cn(
-                "relative flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-bold text-[var(--muted)] transition",
-                isActive && "bg-[var(--brand-soft)] text-[var(--brand-violet-deep)]"
+                "relative flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-bold transition",
+                isActive ? "bg-[var(--brand-soft)] text-[var(--brand-violet-deep)]" : "text-[var(--muted)]"
               )}
               href={item.href}
             >
