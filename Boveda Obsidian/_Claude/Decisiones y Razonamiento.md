@@ -27,6 +27,54 @@ tags:
 
 ## Decisiones registradas
 
+### [2026-09-09] Hero de home reemplazado por imagen full-bleed con texto propio; se saca el `<h1>` HTML del overlay
+
+**Contexto:** El usuario pidió que la imagen principal del home (`imagen-home.png`, nueva, provista por él) llegara hasta las orillas completamente (antes vivía dentro de una tarjeta con `max-w-7xl`, padding y bordes redondeados) y que se quitara el botón secundario "Ver camitas propias" dejando solo "Explorar la tienda". Al implementarlo apareció un problema real: la imagen nueva **ya trae el copy de marketing dibujado adentro** ("Todo lo que tu mascota necesita", "En un solo lugar", la bajada, y la tarjeta "Pequeños detalles, grandes momentos" que antes era un `<div>` HTML aparte) — el `<h1>`/`<p>`/tarjeta decorativa de `HomeHero` quedaban superpuestos encima, duplicando el texto y viéndose roto.
+
+**Opciones evaluadas:**
+- Sacar el overlay de texto HTML (h1, p, tarjeta decorativa) y dejar que la imagen hable por sí sola, solo con el botón CTA encima.
+- Pedir/generar una versión "solo foto" de la imagen (sin el texto incrustado) para poder mantener el `<h1>` semántico real por SEO.
+
+**Decisión:** La primera opción — consultada y confirmada explícitamente con el usuario. `HomeHero` quedó reducido a: imagen full-bleed (`object-cover object-left`, sin contenedor `max-w-7xl`/rounded/border) + un degradado sutil hacia abajo + el botón "Explorar la tienda" anclado abajo-izquierda dentro de un contenedor `max-w-7xl` (solo para alinear el botón con el resto del layout, no para acotar la imagen).
+
+**Por qué `object-left` y no `object-center`:** La imagen es paisaje ancho (1786×881, ratio ~2.03:1) con el texto útil concentrado en el tercio izquierdo. Con `object-center` en mobile (contenedor angosto y proporcionalmente alto) el recorte de `object-cover` cortaba justo ese texto por la izquierda — se verificó con captura real y el texto salía truncado ("...E TU", "...NECESITA"). Con `object-left`, el recorte prioriza mostrar desde el borde izquierdo de la imagen, así el texto siempre queda completo aunque en mobile se pierda parte del lado derecho (la tarjeta "Pequeños detalles..."). Verificado con capturas Playwright en 390px y 1440px tras el cambio: mobile ya muestra el texto completo, desktop esencialmente muestra la imagen entera sin crop relevante.
+
+**Impacto — deuda de SEO nueva y real:** El home ya no tiene ningún `<h1>` en HTML (antes vivía en `HomeHero`, ahora el titular solo existe como píxeles dentro del PNG). Se compensó parcialmente con un `alt` descriptivo en la imagen, pero eso no reemplaza a un `<h1>` real para SEO/accesibilidad. **No estaba en [[Pendientes Claude]] antes de esta sesión** — se agrega ahí como pendiente nuevo. Cualquier imagen de hero futura que traiga texto incrustado debería evaluarse con este mismo criterio (¿hay `<h1>` real en algún lado de la página?).
+
+---
+
+### [2026-09-09] Búsqueda del header conectada al filtro existente de `CatalogView`, sin backend de búsqueda nuevo
+
+**Contexto:** El buscador del header (mobile y desktop) era solo visual desde su restauración. El usuario preguntó si se podía implementar la funcionalidad real sin tener el catálogo final de productos — la respuesta fue sí, porque `CatalogView` ya filtraba localmente por texto (`search` state) sobre lo que devuelve `getStorefrontProducts()`, el mismo mecanismo que ya usan los filtros de tamaño/mascota/categoría.
+
+**Opciones evaluadas:**
+- Construir un endpoint/lógica de búsqueda nueva (ej. ruta API dedicada, búsqueda server-side en Medusa).
+- Conectar el input del header al filtro de texto que `CatalogView` ya tenía implementado, vía query param de URL.
+
+**Decisión:** La segunda opción. Los formularios de búsqueda del header hacen `router.push('/tienda?buscar=' + query)`; `CatalogView` (ya client component) lee `buscar` con `useSearchParams()` de `next/navigation` como valor inicial de su `search` state, con un `useEffect` que resincroniza si el query param cambia (navegación repetida desde el header estando ya en `/tienda`).
+
+**Por qué:** Cero lógica de filtrado nueva — el `search` state de `CatalogView` ya matcheaba contra `name`/`shortDescription`/`categoryLabel` de `StorefrontProduct`. Escala automáticamente con cualquier cantidad de productos reales en Medusa, sin tocar nada cuando el catálogo crezca o cambie. Consistente con el patrón de capa de adaptación ya establecido (componentes visuales no saben ni les importa si el dato es mock o Medusa real).
+
+**Impacto:** `tienda/page.tsx` y `categorias/[slug]/page.tsx` envuelven `<CatalogView>` en `<Suspense>` — requisito de Next.js para usar `useSearchParams` en un client component dentro de una ruta que puede prerenderse estáticamente (sin el Suspense, Next.js emite warning de build y fuerza CSR completo en esa ruta). Verificado con `npm run build` (con `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` vacío para aislar del hecho de que Medusa no estaba corriendo — build real con Medusa activo no se probó en esta sesión) sin warnings, y con Playwright headless (Chrome del sistema, sin red para el Chromium embebido) confirmando el filtrado end-to-end en mobile y desktop. Ver [[Pendientes Claude]].
+
+---
+
+### [2026-09-09] Cuenta/Carrito fuera del header en mobile, reemplazados por lupa de búsqueda directa
+
+**Contexto:** Tras restaurar la hamburguesa (ver decisión inmediatamente debajo), el usuario notó que Cuenta y Carrito seguían arriba en el header aunque el bottom nav mobile ya los cubre (con badge de cantidad incluido en Carrito) — redundancia real. Preguntó directamente si convenía sacarlos y poner la lupa, o dejar la búsqueda escondida dentro del menú hamburguesa.
+
+**Opciones evaluadas:**
+- Dejar todo como estaba tras la restauración de la hamburguesa (búsqueda solo dentro del drawer del menú).
+- Sacar Cuenta/Carrito del header en mobile y poner un botón de lupa que abra la búsqueda directamente, sacando el buscador duplicado de dentro del menú.
+
+**Decisión:** La segunda opción, solo por debajo de `md` (donde vive el bottom nav, `mobile-bottom-nav.tsx` es `md:hidden`). El botón de lupa alterna un panel de búsqueda que aparece debajo del header (mismo patrón visual que tenía el drawer del menú). El menú hamburguesa ya no incluye el input de búsqueda — solo navegación. Desde `md:` en adelante nada cambia: siguen los íconos de Cuenta/Carrito y la barra de búsqueda de escritorio, porque ahí no hay bottom nav.
+
+**Por qué:** Confirmé en `mobile-bottom-nav.tsx` que Cuenta y Carrito (con badge) ya están cubiertos en mobile — mantenerlos arriba era pura redundancia, mismo argumento que ya se usó para sacar wishlist y hamburguesa el 2026-09-05. La lupa a un tap es más descubrible que escondida dentro de un menú de dos pasos.
+
+**Impacto:** Verificado con Playwright headless contra Chrome del sistema (no había red para descargar el Chromium embebido de Playwright) en 390px y 1024px — sin errores de consola, ambos breakpoints se comportan como se esperaba. `SiteHeader` ahora maneja dos estados independientes (`isMenuOpen`, `isSearchOpen`) que se cierran mutuamente al abrir el otro. Buscador sigue siendo solo visual (sin `onChange`), la funcionalidad real queda pendiente. Ver [[Pendientes Claude]].
+
+---
+
 ### [2026-09-09] Menú hamburguesa mobile restaurado — reversión parcial de la decisión del 2026-09-05
 
 **Contexto:** El usuario sintió que al header le faltaba el menú hamburguesa en mobile tras haberlo quitado el 2026-09-05 (ver decisión "Header mobile sin hamburguesa ni wishlist"). Pidió explícitamente devolverlo y dejar visible la lupa de búsqueda, sin darle funcionalidad todavía.

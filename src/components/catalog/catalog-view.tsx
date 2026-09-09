@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import { categories } from "@/data/mock-store";
 import { buttonStyles } from "@/components/ui/button";
@@ -25,11 +26,18 @@ export function CatalogView({
   heroImage: string;
   activeCategory?: string;
 }) {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const queryFromUrl = searchParams.get("buscar") ?? "";
+
+  const [search, setSearch] = useState(queryFromUrl);
   const [sortMode, setSortMode] = useState<SortMode>("featured");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedPetTypes, setSelectedPetTypes] = useState<string[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  useEffect(() => {
+    setSearch(queryFromUrl);
+  }, [queryFromUrl]);
 
   const visibleProducts = useMemo(() => {
     let nextProducts = [...products];

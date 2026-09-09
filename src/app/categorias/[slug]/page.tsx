@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { categories } from "@/data/mock-store";
 import { CatalogView } from "@/components/catalog/catalog-view";
@@ -19,12 +20,14 @@ export default async function CategoryPage({
   const storefrontProducts = await getStorefrontProducts();
 
   return (
-    <CatalogView
-      activeCategory={slug}
-      description={category.description}
-      heroImage="/images/patilandia/royal-bed.png"
-      products={storefrontProducts}
-      title={category.name}
-    />
+    <Suspense>
+      <CatalogView
+        activeCategory={slug}
+        description={category.description}
+        heroImage="/images/patilandia/royal-bed.png"
+        products={storefrontProducts}
+        title={category.name}
+      />
+    </Suspense>
   );
 }

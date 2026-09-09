@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { CatalogView } from "@/components/catalog/catalog-view";
 import { getStorefrontProducts } from "@/lib/storefront";
 
@@ -9,11 +11,13 @@ export default async function StorePage() {
   const storefrontProducts = await getStorefrontProducts();
 
   return (
-    <CatalogView
-      description="Camitas, textiles y esenciales con una experiencia visual premium inspirada en un universo fantástico para mascotas."
-      heroImage="/images/patilandia/hero-fantasy.png"
-      products={storefrontProducts}
-      title="Tienda Patilandia"
-    />
+    <Suspense>
+      <CatalogView
+        description="Camitas, textiles y esenciales con una experiencia visual premium inspirada en un universo fantástico para mascotas."
+        heroImage="/images/patilandia/hero-fantasy.png"
+        products={storefrontProducts}
+        title="Tienda Patilandia"
+      />
+    </Suspense>
   );
 }
