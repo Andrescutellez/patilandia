@@ -25,12 +25,12 @@ export function HomeHero() {
       />
 
       <div className="absolute inset-x-0 bottom-[8%] flex justify-start px-4 md:hidden">
-        <Link className={buttonStyles({ size: "sm" })} href="/tienda">
+        <Link className={buttonStyles({ size: "xs" })} href="/tienda">
           Explorar la tienda
-          <ChevronRightIcon className="h-4 w-4" />
+          <ChevronRightIcon className="h-3 w-3" />
         </Link>
       </div>
-      <div className="absolute inset-x-0 bottom-[8%] hidden justify-start px-10 md:flex lg:px-14">
+      <div className="absolute inset-x-0 bottom-[8%] hidden justify-start px-20 md:flex lg:px-24">
         <Link className={buttonStyles({ size: "lg" })} href="/tienda">
           Explorar la tienda
           <ChevronRightIcon className="h-4 w-4" />
