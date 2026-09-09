@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { benefits } from "@/data/mock-store";
-import { BenefitsStrip } from "@/components/home/benefits-strip";
 import { CategoryStrip } from "@/components/home/category-strip";
 import { CollectionCard } from "@/components/home/collection-card";
 import { HomeHero } from "@/components/home/home-hero";
@@ -20,7 +19,6 @@ export default async function HomePage() {
     <div className="pb-12">
       <HomeHero />
       <CategoryStrip />
-      <BenefitsStrip />
 
       <section className="mx-auto max-w-7xl space-y-6 px-4 pt-12 sm:px-6 lg:px-8">
         <SectionHeading

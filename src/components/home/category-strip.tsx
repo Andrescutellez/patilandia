@@ -7,7 +7,7 @@ import { CategoryIcon } from "@/components/ui/icons";
 export function CategoryStrip() {
   return (
     <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-2 gap-3 rounded-[2rem] border border-white/60 bg-white/80 p-3 shadow-[0_20px_50px_rgba(31,36,84,0.08)] backdrop-blur md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         {categories.map((category) => (
           <Link
             key={category.slug}
