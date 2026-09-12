@@ -7,11 +7,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { categories } from "@/data/mock-store";
 import { buttonStyles } from "@/components/ui/button";
-import { CategoryIcon, ChevronDownIcon, FilterIcon, PawIcon } from "@/components/ui/icons";
+import { CategoryIcon, ChevronDownIcon, ChevronRightIcon, FilterIcon, PawIcon } from "@/components/ui/icons";
 import { ProductCard } from "@/components/products/product-card";
+import { formatCurrency } from "@/lib/utils";
 import type { StorefrontProduct } from "@/types/commerce";
 
 type SortMode = "featured" | "price-asc" | "price-desc" | "rating";
+
+const PAGE_SIZE = 12;
 
 export function CatalogView({
   products,
@@ -33,13 +36,25 @@ export function CatalogView({
   const [sortMode, setSortMode] = useState<SortMode>("featured");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedPetTypes, setSelectedPetTypes] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setSearch(queryFromUrl);
   }, [queryFromUrl]);
 
-  const visibleProducts = useMemo(() => {
+  const priceBounds = useMemo(() => {
+    if (products.length === 0) {
+      return { min: 0, max: 0 };
+    }
+    const prices = products.map((product) => product.price);
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
     let nextProducts = [...products];
 
     if (activeCategory) {
@@ -65,6 +80,20 @@ export function CatalogView({
       );
     }
 
+    const min = Number(minPrice);
+    if (minPrice.trim() && !Number.isNaN(min)) {
+      nextProducts = nextProducts.filter((product) => product.price >= min);
+    }
+
+    const max = Number(maxPrice);
+    if (maxPrice.trim() && !Number.isNaN(max)) {
+      nextProducts = nextProducts.filter((product) => product.price <= max);
+    }
+
+    if (onlyAvailable) {
+      nextProducts = nextProducts.filter((product) => product.stock > 0);
+    }
+
     switch (sortMode) {
       case "price-asc":
         nextProducts.sort((left, right) => left.price - right.price);
@@ -80,7 +109,29 @@ export function CatalogView({
     }
 
     return nextProducts;
-  }, [activeCategory, products, search, selectedPetTypes, selectedSizes, sortMode]);
+  }, [
+    activeCategory,
+    maxPrice,
+    minPrice,
+    onlyAvailable,
+    products,
+    search,
+    selectedPetTypes,
+    selectedSizes,
+    sortMode
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, maxPrice, minPrice, onlyAvailable, search, selectedPetTypes, selectedSizes, sortMode]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const visibleProducts = filteredProducts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const filters = (
     <aside className="space-y-6 rounded-[2rem] border border-white/60 bg-white/80 p-5 shadow-[0_18px_45px_rgba(31,36,84,0.08)]">
@@ -95,6 +146,9 @@ export function CatalogView({
             setSearch("");
             setSelectedSizes([]);
             setSelectedPetTypes([]);
+            setMinPrice("");
+            setMaxPrice("");
+            setOnlyAvailable(false);
             setSortMode("featured");
           }}
           type="button"
@@ -131,6 +185,41 @@ export function CatalogView({
           </label>
         ))}
       </div>
+
+      <div className="grid gap-3">
+        <p className="text-sm font-bold text-[var(--ink)]">Precio</p>
+        <div className="flex items-center gap-2">
+          <input
+            className="h-12 w-full rounded-2xl border border-[var(--line)] px-4 text-sm text-[var(--ink)] outline-none"
+            inputMode="numeric"
+            min={0}
+            onChange={(event) => setMinPrice(event.target.value)}
+            placeholder={priceBounds.min ? `Desde ${formatCurrency(priceBounds.min)}` : "Mínimo"}
+            type="number"
+            value={minPrice}
+          />
+          <span className="text-[var(--muted)]">–</span>
+          <input
+            className="h-12 w-full rounded-2xl border border-[var(--line)] px-4 text-sm text-[var(--ink)] outline-none"
+            inputMode="numeric"
+            min={0}
+            onChange={(event) => setMaxPrice(event.target.value)}
+            placeholder={priceBounds.max ? `Hasta ${formatCurrency(priceBounds.max)}` : "Máximo"}
+            type="number"
+            value={maxPrice}
+          />
+        </div>
+      </div>
+
+      <label className="flex items-center gap-3 text-sm text-[var(--muted)]">
+        <input
+          checked={onlyAvailable}
+          className="h-4 w-4 rounded border-[var(--line)] accent-[var(--brand-violet)]"
+          onChange={(event) => setOnlyAvailable(event.target.checked)}
+          type="checkbox"
+        />
+        <span className="font-bold text-[var(--ink)]">Solo disponibles</span>
+      </label>
 
       <div className="grid gap-3">
         <p className="text-sm font-bold text-[var(--ink)]">Tipo de mascota</p>
@@ -276,6 +365,43 @@ export function CatalogView({
               <p className="mt-2 text-sm text-[var(--muted)]">
                 Ajusta la búsqueda o limpia filtros para seguir explorando.
               </p>
+            </div>
+          ) : null}
+
+          {totalPages > 1 ? (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                aria-label="Página anterior"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] text-[var(--ink)] disabled:opacity-30"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                type="button"
+              >
+                <ChevronRightIcon className="h-4 w-4 rotate-180" />
+              </button>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
+                    page === currentPage
+                      ? "bg-[var(--brand-violet)] text-white"
+                      : "border border-[var(--line)] text-[var(--ink)]"
+                  }`}
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  type="button"
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                aria-label="Página siguiente"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] text-[var(--ink)] disabled:opacity-30"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                type="button"
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+              </button>
             </div>
           ) : null}
         </div>

@@ -1,12 +1,29 @@
 import Link from "next/link";
 
+import { AccountPatipuntosCard } from "@/components/account/account-patipuntos-card";
+import { AccountPetsCard } from "@/components/account/account-pets-card";
+import { AccountWishlistCard } from "@/components/account/account-wishlist-card";
 import { buttonStyles } from "@/components/ui/button";
+import { getStorefrontProducts } from "@/lib/storefront";
 
 export const metadata = {
   title: "Cuenta"
 };
 
-export default function AccountPage() {
+const comingSoonCards = [
+  {
+    title: "Órdenes y seguimiento",
+    description: "Vas a poder ver acá el historial de tus pedidos apenas conectemos cuentas de cliente."
+  },
+  {
+    title: "Direcciones guardadas",
+    description: "Guardá tus direcciones de envío para no volver a escribirlas en cada compra."
+  }
+];
+
+export default async function AccountPage() {
+  const products = await getStorefrontProducts();
+
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <div>
@@ -15,25 +32,26 @@ export default function AccountPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          "Órdenes y seguimiento",
-          "Direcciones guardadas",
-          "Favoritos y compras recurrentes",
-          "Perfil de tus mascotas"
-        ].map((title) => (
+        <AccountWishlistCard products={products} />
+        <AccountPetsCard />
+        <AccountPatipuntosCard />
+        {comingSoonCards.map((card) => (
           <div
-            key={title}
-            className="rounded-[2rem] border border-white/60 bg-white/82 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]"
+            key={card.title}
+            className="rounded-[2rem] border border-dashed border-[var(--line)] bg-white/60 p-6"
           >
-            <h2 className="font-display text-3xl leading-none text-[var(--ink)]">{title}</h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-              Vista preparada para evolucionar hacia autenticación, clientes y órdenes reales desde Medusa.
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display text-3xl leading-none text-[var(--ink)]">{card.title}</h2>
+              <span className="shrink-0 rounded-full bg-[var(--brand-soft)] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--brand-violet-deep)]">
+                Próximamente
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{card.description}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-[2rem] border border-white/60 bg-[linear-gradient(135deg,#23318a,#7f72ff)] p-8 text-white shadow-[0_24px_60px_rgba(31,36,84,0.12)]">
+      <div className="rounded-[2rem] border border-white/60 bg-[var(--brand-violet)] p-8 text-white shadow-[0_24px_60px_rgba(31,36,84,0.12)]">
         <h2 className="font-display text-5xl leading-none">Una base lista para crecer</h2>
         <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
           Cuando conectemos clientes y órdenes reales, esta sección podrá mostrar historial, recompensas,

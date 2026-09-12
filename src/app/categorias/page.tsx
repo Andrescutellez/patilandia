@@ -8,7 +8,10 @@ import { CategoryIcon } from "@/components/ui/icons";
 import { SectionHeading } from "@/components/ui/section-heading";
 
 export const metadata = {
-  title: "Categorías"
+  title: "Categorías",
+  description:
+    "Explorá el catálogo de Patilandia por categoría: camitas, juguetes, alimentos, accesorios, higiene, transporte y ropa para tu mascota.",
+  alternates: { canonical: "/categorias" }
 };
 
 export default function CategoriesPage() {
@@ -64,11 +67,11 @@ export default function CategoriesPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/60 bg-[linear-gradient(135deg,#223089,#7f72ff)] p-8 text-white shadow-[0_24px_60px_rgba(31,36,84,0.12)]">
-        <h2 className="font-display text-5xl leading-none">Preparado para integrarse con Medusa</h2>
+      <section className="rounded-[2rem] border border-white/60 bg-[var(--brand-violet)] p-8 text-white shadow-[0_24px_60px_rgba(31,36,84,0.12)]">
+        <h2 className="font-display text-5xl leading-none">Categorías conectadas a un catálogo real</h2>
         <p className="mt-4 max-w-3xl text-base leading-8 text-white/78">
-          Las categorías quedan desacopladas del origen de datos. Hoy pueden consumir mocks y mañana
-          productos, variantes, precios e inventario desde la Store API de Medusa.
+          Cada categoría lee productos, variantes, precios e inventario reales desde la API de
+          Vendure — con mocks de respaldo solo si el backend no está disponible.
         </p>
         <Link className={buttonStyles({ className: "mt-6" })} href="/checkout">
           Ver flujo de compra

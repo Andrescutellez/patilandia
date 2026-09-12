@@ -140,6 +140,7 @@ function createProduct(
   overrides: Partial<StorefrontProduct> & Pick<StorefrontProduct, "slug" | "sku" | "name">
 ): StorefrontProduct {
   return {
+    id: overrides.slug,
     categorySlug: "camitas",
     categoryLabel: "Camitas",
     collectionSlug: "dreams",
@@ -362,7 +363,7 @@ export const benefits: Benefit[] = [
   },
   {
     title: "Compra segura",
-    description: "Checkout desacoplado y listo para Medusa, Wompi y Mercado Pago.",
+    description: "Checkout real conectado a Vendure, listo para sumar Wompi y Mercado Pago.",
     icon: "shield"
   },
   {
@@ -391,16 +392,6 @@ export function getProductsByCollection(collectionSlug: string) {
 
 export function getFeaturedProducts(limit = 6) {
   return products.filter((product) => product.featured).slice(0, limit);
-}
-
-export function getRelatedProducts(product: StorefrontProduct, limit = 4) {
-  return products
-    .filter(
-      (item) =>
-        item.slug !== product.slug &&
-        (item.collectionSlug === product.collectionSlug || item.categorySlug === product.categorySlug)
-    )
-    .slice(0, limit);
 }
 
 export function getCartSubtotal(items: CartLineItem[]) {

@@ -1,6 +1,7 @@
 @import "@fontsource/nunito/400.css";
 @import "@fontsource/nunito/700.css";
 @import "@fontsource/baloo-2/700.css";
+@import "@fontsource/permanent-marker/400.css";
 @import "tailwindcss";
 
 :root {
@@ -15,6 +16,7 @@
   --muted: #5f6790;
   --line: rgba(126, 134, 195, 0.2);
   --font-display: "Baloo 2", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-marker: "Permanent Marker", "Baloo 2", "Trebuchet MS", "Segoe UI", sans-serif;
   --font-body: "Nunito", "Aptos", "Segoe UI", sans-serif;
 }
 
@@ -51,6 +53,10 @@ body {
 
 .font-display {
   font-family: var(--font-display);
+}
+
+.font-marker {
+  font-family: var(--font-marker);
 }
 
 .line-clamp-2 {

@@ -6,12 +6,15 @@ tags:
   - medusa
   - admin
   - roadmap
-status: activo
+status: histórico
 ---
 
 # Patilandia sobre Medusa Admin — Diagnóstico y Roadmap
 
-> [!info] Por qué existe esta nota
+> [!failure] SUPERADA — el proyecto migró de Medusa a Vendure (2026-09-11)
+> Este roadmap de 7 fases para el admin de Medusa **nunca se llegó a construir** (quedó solo en diagnóstico) y ya no aplica — el proyecto migró completo a Vendure. La estrategia híbrida que proponía esta nota (admin nativo + extensiones propias) sí se retomó, pero sobre el Dashboard de Vendure: ver "Patilandia Admin" en [[Decisiones y Razonamiento]] (Fase 6, 2026-09-11). Esta nota queda como registro histórico del razonamiento original, no como plan vigente.
+
+> [!info] Por qué existe esta nota (contexto histórico)
 > El pedido original era "llevar el diseño del storefront al admin de Medusa". La investigación (código instalado + discusiones oficiales del repo de Medusa) mostró que eso no es viable sin forkear `@medusajs/dashboard`. Esta nota documenta el diagnóstico completo y la estrategia híbrida que se decidió en su lugar: Medusa Admin nativo para todo lo estándar, extensiones propias para lo diferencial de Patilandia. Ver también [[Integración Medusa]] y [[Entorno de Desarrollo Local]].
 
 ## Por qué no un reskin global ni un fork

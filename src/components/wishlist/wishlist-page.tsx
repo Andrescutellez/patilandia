@@ -9,7 +9,7 @@ import type { StorefrontProduct } from "@/types/commerce";
 
 export function WishlistPage({ products }: { products: StorefrontProduct[] }) {
   const { wishlist } = useStore();
-  const items = products.filter((product) => wishlist.includes(product.slug));
+  const items = products.filter((product) => wishlist.includes(product.id));
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">

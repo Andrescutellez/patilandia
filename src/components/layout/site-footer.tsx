@@ -12,7 +12,7 @@ export function SiteFooter() {
           <Logo className="[&_span:last-child]:text-white/70 [&_span:first-child]:text-white [&_svg]:text-white" />
           <p className="max-w-md text-sm leading-7 text-white/70">
             Patilandia diseña un e-commerce pet-centric con alma textil, estética fantástica y una
-            experiencia preparada para crecer sobre Medusa sin perder identidad.
+            experiencia construida sobre Vendure sin perder identidad.
           </p>
         </div>
 

@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { CartIcon, HeartIcon, StarIcon } from "@/components/ui/icons";
+import { CartIcon, HeartIcon } from "@/components/ui/icons";
+import { RatingStars } from "@/components/ui/rating-stars";
 import { formatCurrency, percentageOff } from "@/lib/utils";
 import { useStore } from "@/store/store-provider";
 import type { StorefrontProduct } from "@/types/commerce";
@@ -20,7 +21,7 @@ const themeMap: Record<StorefrontProduct["theme"], string> = {
 export function ProductCard({ product }: { product: StorefrontProduct }) {
   const { addToCart, isWishlisted, toggleWishlist } = useStore();
   const discount = percentageOff(product.price, product.compareAtPrice);
-  const wishlisted = isWishlisted(product.slug);
+  const wishlisted = isWishlisted(product.id);
 
   return (
     <article className="group overflow-hidden rounded-[1.8rem] border border-white/60 bg-white shadow-[0_20px_50px_rgba(33,38,84,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(33,38,84,0.14)]">
@@ -41,7 +42,7 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
         <button
           aria-label={wishlisted ? "Quitar de favoritos" : "Agregar a favoritos"}
           className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-[var(--brand-violet-deep)] shadow-[0_12px_24px_rgba(21,26,76,0.12)] sm:right-4 sm:top-4 sm:h-10 sm:w-10"
-          onClick={() => toggleWishlist(product.slug)}
+          onClick={() => toggleWishlist(product.id)}
           type="button"
         >
           <HeartIcon className={wishlisted ? "h-4 w-4 text-[var(--brand-pink)] sm:h-5 sm:w-5" : "h-4 w-4 sm:h-5 sm:w-5"} />
@@ -65,13 +66,15 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-[var(--muted)] sm:gap-2 sm:text-sm">
-          <div className="flex items-center gap-0.5 text-amber-400 sm:gap-1">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <StarIcon key={`${product.slug}-${index}`} className="h-3 w-3 sm:h-4 sm:w-4" />
-            ))}
-          </div>
-          <span>{product.rating.toFixed(1)}</span>
-          <span>({product.reviewCount})</span>
+          {product.reviewCount > 0 ? (
+            <>
+              <RatingStars className="h-3 w-3 sm:h-4 sm:w-4" rating={product.rating} />
+              <span>{product.rating.toFixed(1)}</span>
+              <span>({product.reviewCount})</span>
+            </>
+          ) : (
+            <span>Sin reseñas todavía</span>
+          )}
         </div>
 
         <div className="flex items-end justify-between gap-3">

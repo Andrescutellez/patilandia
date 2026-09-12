@@ -10,14 +10,16 @@ export function SectionHeading({
   description,
   actionHref,
   actionLabel,
-  centered = false
+  centered = false,
+  titleFont = "display"
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   actionHref?: string;
   actionLabel?: string;
   centered?: boolean;
+  titleFont?: "display" | "marker";
 }) {
   return (
     <div
@@ -30,8 +32,15 @@ export function SectionHeading({
         <p className="text-sm font-black uppercase tracking-[0.35em] text-[var(--brand-violet-deep)]">
           {eyebrow}
         </p>
-        <h2 className="font-display text-4xl leading-none text-[var(--ink)] sm:text-5xl">{title}</h2>
-        <p className="max-w-xl text-base text-[var(--muted)]">{description}</p>
+        <h2
+          className={cn(
+            titleFont === "marker" ? "font-marker" : "font-display",
+            "text-4xl leading-none text-[var(--ink)] sm:text-5xl"
+          )}
+        >
+          {title}
+        </h2>
+        {description ? <p className="max-w-xl text-base text-[var(--muted)]">{description}</p> : null}
       </div>
 
       {actionHref && actionLabel ? (

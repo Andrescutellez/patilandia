@@ -5,13 +5,16 @@ tags:
   - arquitectura
   - medusa
   - integracion
-status: activo
+status: histórico
 ---
 
 # Integración Medusa — Capa de Adaptación
 
-> [!success] Estado actual (actualizado 2026-09-04)
-> Medusa **está instalado, corriendo en local y conectado** — no es solo una capa preparada en teoría. Backend en `patilandia-backend` (repo hermano), catálogo real de 8 productos migrado, storefront apuntando a él vía `.env.local`. Detalle de cómo levantarlo en [[Entorno de Desarrollo Local]]. Lo que sigue en esta nota describe la capa de código tal como funciona ahora mismo contra Medusa real, no como diseño teórico.
+> [!failure] SUPERADA — Medusa ya no existe en el proyecto (2026-09-11)
+> Patilandia migró de Medusa a Vendure (7 fases, ver [[Decisiones y Razonamiento]]). `patilandia-backend` se borró del disco por completo y `src/lib/medusa/` ya no existe en el storefront. Esta nota queda como registro histórico de cómo funcionaba la integración con Medusa — no describe el sistema actual. Para la integración real y vigente, ver [[Decisiones y Razonamiento]] (Fase 2 y 3) y [[Entorno de Desarrollo Local]].
+
+> [!success] Estado histórico al 2026-09-04 (ya no vigente)
+> Medusa **estaba instalado, corriendo en local y conectado** — no era solo una capa preparada en teoría. Backend en `patilandia-backend` (repo hermano), catálogo real de 8 productos migrado, storefront apuntando a él vía `.env.local`. Lo que sigue en esta nota describe la capa de código tal como funcionaba contra Medusa real en ese momento.
 >
 > Para el lado **admin** de Medusa (no el storefront): ver [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] — diagnóstico de qué se puede extender oficialmente (widgets/UI routes/módulos custom) vs. qué no es viable (re-temear el dashboard nativo globalmente).
 

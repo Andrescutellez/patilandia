@@ -6,111 +6,76 @@ tags:
   - devops
   - entorno-local
 status: activo
+updated: 2026-09-11 (baja de Medusa — reescrita para reflejar el entorno actual sobre Vendure)
 ---
 
 # Entorno de Desarrollo Local — Patilandia
 
 > [!info] Por qué existe esta nota
-> Levantar el sistema completo (storefront + Medusa + Postgres) tiene varios pasos y un par de gotchas de este equipo específico (puerto de Postgres, prompts interactivos del instalador). Esta nota es la referencia para no tener que redescubrirlos.
+> Levantar el sistema completo (storefront + Vendure + Postgres) tiene varios pasos y un par de gotchas de este equipo específico (puerto de Postgres, separador de rutas en Windows). Esta nota es la referencia para no tener que redescubrirlos.
+
+> [!note] Medusa ya no existe en este proyecto
+> Hasta el 2026-09-11 el backend era Medusa (`patilandia-backend`). Se migró completo a Vendure (ver [[Decisiones y Razonamiento]], fases 1-7) y el repo de Medusa se borró del disco a pedido explícito del usuario. Si algo de código o de memoria vieja todavía menciona Medusa, está desactualizado.
 
 ## Piezas del sistema y dónde viven
 
 | Pieza | Carpeta | Repo git |
 |---|---|---|
 | Storefront (Next.js) | `C:\Users\Leonardo\Desktop\patilandia` | Sí — el repo principal |
-| Backend Medusa | `C:\Users\Leonardo\Desktop\patilandia-backend` | Sí, inicializado 2026-09-04, **sin commits ni remote todavía** |
-| Postgres | Contenedor Docker `patilandia-postgres` | — |
+| Backend Vendure | `C:\Users\Leonardo\Desktop\patilandia-vendure` | Sí, inicializado por `@vendure/create`, **sin commits todavía** |
+| Postgres de Vendure | Contenedor Docker `patilandia-vendure-postgres_db-1` (puerto 6543, vía el `docker-compose.yml` propio del proyecto) | — |
 
-## Gotcha importante: puerto de Postgres
-
-Esta máquina ya tiene una instancia **nativa** de PostgreSQL corriendo como servicio de Windows en el puerto **5432** (no instalada por nosotros, no la tocamos). Por eso el Postgres de Docker para Medusa se publicó en el puerto **5433**, no el 5432 por defecto. Si algún día se reinstala el contenedor, usar `-p 5433:5432` y `DATABASE_URL` con `:5433`.
-
-## Cómo levantar todo desde cero (tras reiniciar la máquina)
+## Levantar todo desde cero (tras reiniciar la máquina)
 
 ```bash
 # 1. Docker Desktop debe estar corriendo (Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe" si no arrancó solo)
 
-# 2. Levantar Postgres (si el contenedor ya existe, solo iniciarlo)
-docker start patilandia-postgres
-# si no existe todavía:
-docker run -d --name patilandia-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=patilandia_medusa -p 5433:5432 postgres:16
+# 2. Postgres de Vendure (contenedor propio del proyecto)
+cd "C:\Users\Leonardo\Desktop\patilandia-vendure"
+docker compose up -d postgres_db
 
-# 3. Backend Medusa
-cd "C:\Users\Leonardo\Desktop\patilandia-backend"
+# 3. Vendure: server + worker + Dashboard juntos
 npm run dev
-# → Admin dashboard: http://localhost:9000/app
-# → Store API: http://localhost:9000/store/*
+# → Shop API:  http://localhost:3000/shop-api
+# → Admin API: http://localhost:3000/admin-api
+# → Dashboard: http://localhost:3000/dashboard   (superadmin / superadmin — temporal)
+# → GraphiQL:  http://localhost:3000/graphiql/shop  y  /graphiql/admin
 
 # 4. Storefront (en otra terminal)
 cd "C:\Users\Leonardo\Desktop\patilandia"
 npm run dev
-# → http://localhost:3000
+# → http://localhost:3000 normalmente, pero como Vendure ya ocupa el 3000,
+#   Next.js detecta el puerto ocupado y arranca solo en el 3001 (http://localhost:3001)
 ```
+
+Si hace falta re-sembrar el catálogo real de Patilandia (idempotente — limpia sample data/assets viejos y recrea todo):
+
+```bash
+cd "C:\Users\Leonardo\Desktop\patilandia-vendure"
+npx ts-node src/scripts/seed-patilandia.ts
+```
+
+## Gotcha importante: puerto de Postgres
+
+Esta máquina ya tiene una instancia **nativa** de PostgreSQL corriendo como servicio de Windows en el puerto **5432** (no instalada por nosotros, no la tocamos). El Postgres de Vendure se publica en el puerto **6543** vía `docker-compose.yml` (lo trae así el propio scaffold de `@vendure/create`, no hubo que elegirlo a mano).
+
+## Gotcha real de Vendure en Windows: separadores de ruta en las URLs de assets
+
+`LocalAssetStorageStrategy` arma el identificador público de cada asset con `path.join()` de Node, que en Windows usa `\` — eso rompe cualquier URL de imagen en el browser (`/assets/preview\aa\archivo.png` no es una URL válida). Se corrigió con un `storageStrategyFactory` custom en `patilandia-vendure/src/vendure-config.ts` que normaliza `\`→`/`. Si se reinstala Vendure desde cero en Windows, este parche hay que volver a aplicarlo (no es parte del scaffold por defecto).
 
 ## Credenciales de desarrollo (solo local, no usar en producción)
 
 | Cosa | Valor |
 |---|---|
-| Admin Medusa — email | `admin@patilandia.com.co` |
-| Admin Medusa — password | `Patilandia2026!` (temporal, cambiar cuando se quiera) |
-| Publishable API key | `pk_a099b3c8d0cfb6bb4e500f4ad14209d1f2640e76b053f7428a0c81662a1cdc99` |
-| Postgres user/pass | `postgres` / `postgres` |
-| Postgres DB | `patilandia_medusa` en `localhost:5433` |
+| Dashboard Vendure — usuario | `superadmin` |
+| Dashboard Vendure — password | `superadmin` (temporal, cambiar cuando se quiera) |
+| Postgres user/pass | ver `patilandia-vendure/.env` (generado por el scaffold, no versionado) |
+| Postgres DB | `vendure` en `localhost:6543` |
 
-El storefront lee la key desde `patilandia/.env.local` (gitignored, no versionado — si se clona el repo en otra máquina hay que recrear este archivo a mano con estos valores o los que correspondan a ese entorno).
+El storefront lee la URL de la Shop API desde `patilandia/.env.local` (gitignored, no versionado — si se clona el repo en otra máquina hay que recrearlo a mano: `NEXT_PUBLIC_VENDURE_SHOP_API_URL=http://localhost:3000/shop-api`).
 
-## Instalar `create-medusa-app` de nuevo (si hay que reinstalar desde cero) — lecciones aprendidas
+## Catálogo real (seed de Patilandia)
 
-El instalador (`npx create-medusa-app@latest`) es interactivo por diseño y **no respeta** `CI=true` ni redirigir stdin a `/dev/null` (esto último hace que se cierre solo sin crear nada). Lo que sí funciona: pipear las respuestas por stdin:
-
-```bash
-printf 'n\nn\nn\nn\nn\nn\nn\nn\nn\nn\n' | npx create-medusa-app@latest patilandia-backend \
-  --db-url "postgres://postgres:postgres@localhost:5433/patilandia_medusa" \
-  --no-browser --use-npm --verbose
-```
-
-(El `n` responde "No" a "¿Instalar el Next.js Starter Storefront?" — no lo necesitamos, ya tenemos nuestro propio storefront.)
-
-## Estructura del proyecto Medusa (monorepo Turborepo)
-
-`create-medusa-app` generó un monorepo con Turborepo, no un proyecto Medusa plano:
-
-```
-patilandia-backend/
-├── apps/
-│   └── backend/           ← el servidor Medusa real
-│       ├── medusa-config.ts
-│       ├── .env           ← DATABASE_URL, JWT_SECRET, CORS, etc.
-│       └── src/
-│           ├── migration-scripts/
-│           │   └── initial-data-seed.ts   ← seed genérico de Medusa (referencia)
-│           └── scripts/
-│               └── patilandia-seed.ts     ← nuestro seed real, ver abajo
-├── AGENTS.md / CLAUDE.md  ← generados automáticamente por Medusa para agentes de IA
-└── package.json           ← scripts turbo (dev/build/start/lint)
-```
-
-`npm run dev` en la raíz corre `turbo dev`, que a su vez corre `medusa develop` dentro de `apps/backend`.
-
-## Catálogo real migrado (2026-09-04)
-
-Los 8 productos mock de Patilandia (ver [[Modelo de Datos y Mocks]]) se migraron a productos reales de Medusa vía un script propio: `patilandia-backend/apps/backend/src/scripts/patilandia-seed.ts`, ejecutado con:
-
-```bash
-cd patilandia-backend/apps/backend
-npx medusa exec ./src/scripts/patilandia-seed.ts
-```
-
-Qué hizo el script (usando los workflows oficiales de Medusa, no SQL directo — ver por qué en [[Decisiones y Razonamiento]]):
-1. Agregó `cop` como moneda soportada de la tienda.
-2. Creó una región "Colombia" (país `co`, moneda `cop`) y su tax region.
-3. Borró (soft-delete) los 4 productos demo de Medusa (T-Shirt, Sweatshirt, Sweatpants, Shorts).
-4. Creó las 8 categorías de Patilandia (`camitas`, `juguetes`, etc.).
-5. Creó los 8 productos reales, cada uno con:
-   - Un único variant "Única" (no hay variantes reales de talla/color en Medusa todavía — coincide con la limitación ya documentada en [[Integración Medusa]]).
-   - `images` con las mismas rutas relativas (`/images/patilandia/*.png`) que ya sirve el storefront — así que las imágenes se ven exactamente igual que con los mocks, sin necesidad de subir nada a un storage externo.
-   - `metadata` con **exactamente** los campos que `adaptMedusaProduct()` espera (`categorySlug`, `price`, `theme`, `colorName`, etc.) — ver [[Integración Medusa]] para el porqué de este esquema.
-
-**Nota:** las 4 categorías demo de Medusa (Shirts, Sweatshirts, Pants, Merch) quedaron huérfanas — `deleteProductCategoriesWorkflow` da error en esta versión de Medusa (2.20.1) ("Trying to query by not existing property ProductCategory.ids"). Es solo desorden cosmético en el admin, se puede borrar a mano desde `http://localhost:9000/app` cuando se quiera. Ver [[Pendientes Claude]].
+Los 8 productos reales de Patilandia se siembran vía `patilandia-vendure/src/scripts/seed-patilandia.ts` (idempotente: limpia catálogo de muestra + assets huérfanos y recrea todo desde cero en cada corrida). Modela categorías y colecciones temáticas como Collections filtradas por Facet, talla/color como ProductVariants reales, y el resto de campos propios de Patilandia como customFields tipados — detalle completo del porqué en [[Decisiones y Razonamiento]] (entrada del 2026-09-10, Fase 2).
 
 Tags: #arquitectura #devops #entorno-local

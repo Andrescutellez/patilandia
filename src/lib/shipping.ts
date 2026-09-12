@@ -30,7 +30,7 @@ export function getShippingPreview(items: CartLineItem[]): ShippingPreview {
     return {
       label: "Cotización inteligente pendiente",
       detail:
-        "Preparado para calcular envíos por peso, volumen, destino y tipo de producto al conectar Medusa.",
+        "Preparado para calcular envíos por peso, volumen, destino y tipo de producto al conectar una transportadora real.",
       status: "quote"
     };
   }

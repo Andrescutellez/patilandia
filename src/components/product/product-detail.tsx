@@ -6,10 +6,13 @@ import { useState } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ProductCard } from "@/components/products/product-card";
+import { ProductReviews } from "@/components/product/product-reviews";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
-import { CrownIcon, HeartIcon, ShieldIcon, SparklesIcon, StarIcon, TruckIcon } from "@/components/ui/icons";
+import { RatingStars } from "@/components/ui/rating-stars";
+import { CrownIcon, HeartIcon, ShieldIcon, SparklesIcon, TruckIcon } from "@/components/ui/icons";
 import { formatCurrency, percentageOff } from "@/lib/utils";
 import { useStore } from "@/store/store-provider";
+import type { ProductReview } from "@/lib/vendure/reviews";
 import type { ProductColor, ProductSize, StorefrontProduct } from "@/types/commerce";
 
 const iconMap = {
@@ -21,10 +24,12 @@ const iconMap = {
 
 export function ProductDetail({
   product,
-  relatedProducts
+  relatedProducts,
+  reviews
 }: {
   product: StorefrontProduct;
   relatedProducts: StorefrontProduct[];
+  reviews: ProductReview[];
 }) {
   const { addToCart, isWishlisted, toggleWishlist } = useStore();
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
@@ -50,24 +55,26 @@ export function ProductDetail({
               <button
                 aria-label="Agregar a favoritos"
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-white text-[var(--brand-violet-deep)]"
-                onClick={() => toggleWishlist(product.slug)}
+                onClick={() => toggleWishlist(product.id)}
                 type="button"
               >
                 <HeartIcon
-                  className={isWishlisted(product.slug) ? "h-5 w-5 text-[var(--brand-pink)]" : "h-5 w-5"}
+                  className={isWishlisted(product.id) ? "h-5 w-5 text-[var(--brand-pink)]" : "h-5 w-5"}
                 />
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-            <div className="flex items-center gap-1 text-amber-400">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <StarIcon key={`${product.slug}-rating-${index}`} className="h-4 w-4" />
-              ))}
-            </div>
-            <span className="font-bold text-[var(--ink)]">{product.rating.toFixed(1)}</span>
-            <span>({product.reviewCount} reseñas)</span>
+            {product.reviewCount > 0 ? (
+              <>
+                <RatingStars rating={product.rating} />
+                <span className="font-bold text-[var(--ink)]">{product.rating.toFixed(1)}</span>
+                <span>({product.reviewCount} reseñas)</span>
+              </>
+            ) : (
+              <span>Sin reseñas todavía</span>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -185,15 +192,22 @@ export function ProductDetail({
           </div>
         </div>
 
-        <div className="rounded-[1.8rem] bg-[linear-gradient(135deg,#2a337f,#7c6ff7)] p-6 text-white">
+        <div className="rounded-[1.8rem] bg-[var(--brand-violet)] p-6 text-white">
           <p className="text-sm font-black uppercase tracking-[0.3em] text-white/70">Hecho para destacar</p>
           <p className="mt-4 font-display text-4xl leading-none">Su propia cama, su propio reino.</p>
           <p className="mt-4 text-base leading-8 text-white/80">
-            Esta base deja preparado el camino para variantes, inventario y checkout real con Medusa sin
-            comprometer el lenguaje visual de la marca.
+            Variantes, inventario y checkout reales, todos conectados a Vendure, sin comprometer el
+            lenguaje visual de la marca.
           </p>
         </div>
       </section>
+
+      <ProductReviews
+        productId={product.id}
+        initialReviews={reviews}
+        rating={product.rating}
+        reviewCount={product.reviewCount}
+      />
 
       <section className="space-y-6">
         <div className="flex items-end justify-between gap-4">

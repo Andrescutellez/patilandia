@@ -34,7 +34,16 @@ export interface ProductFeature {
   icon: string;
 }
 
+export interface StorefrontVariantRef {
+  id: string;
+  size: ProductSize;
+  colorName: string;
+}
+
 export interface StorefrontProduct {
+  /** Real Vendure Product id — needed to fetch/submit reviews. Falls back to the slug for
+   *  mock/fallback data (no backend product to review anyway in that case). */
+  id: string;
   slug: string;
   sku: string;
   name: string;
@@ -62,6 +71,9 @@ export interface StorefrontProduct {
   stock: number;
   featured?: boolean;
   tags: string[];
+  /** Real Vendure variant ids per size/color, needed to add a specific variant to a real cart.
+   *  Undefined for mock/fallback data (no backend order to add to anyway in that case). */
+  variants?: StorefrontVariantRef[];
 }
 
 export interface Benefit {
