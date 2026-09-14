@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, buttonStyles } from "@/components/ui/button";
+import { WhatsAppIcon } from "@/components/ui/icons";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
 import { getShippingPreview } from "@/lib/shipping";
 import { formatCurrency } from "@/lib/utils";
+import { buildCartSummaryMessage, buildWhatsAppLink, getWhatsappSettings, type WhatsappSettings } from "@/lib/whatsapp";
 import { useStore } from "@/store/store-provider";
 
 export function CartPage() {
@@ -19,11 +21,20 @@ export function CartPage() {
     isCartReady,
     customerEmail,
     setCustomerEmail,
-    cartError
+    cartError,
+    cartErrorCode
   } = useStore();
   const shippingPreview = getShippingPreview(cart);
   const [email, setEmail] = useState("");
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  // Self-fetched, same pattern as AccountPatipuntosCard/AccountSubscriptionsCard — this is a client
+  // component, so it can't share the server-side fetch SiteShell already did for the floating
+  // button, but it's the same public, cheap query.
+  const [whatsappSettings, setWhatsappSettings] = useState<WhatsappSettings | null>(null);
+
+  useEffect(() => {
+    getWhatsappSettings().then(setWhatsappSettings);
+  }, []);
 
   if (!isCartReady) {
     return (
@@ -92,7 +103,17 @@ export function CartPage() {
             />
           </label>
 
-          {cartError ? <p className="text-sm font-semibold text-red-500">{cartError}</p> : null}
+          {cartErrorCode === "EMAIL_ADDRESS_CONFLICT_ERROR" ? (
+            <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Ya existe una cuenta con este correo.{" "}
+              <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/carrito">
+                Iniciá sesión
+              </Link>{" "}
+              para continuar con tu compra.
+            </div>
+          ) : cartError ? (
+            <p className="text-sm font-semibold text-red-500">{cartError}</p>
+          ) : null}
 
           <button
             className={buttonStyles({ size: "lg", className: "w-full" })}
@@ -140,6 +161,20 @@ export function CartPage() {
                     <p className="mt-2 text-sm text-[var(--muted)]">
                       {item.selectedColor.name} · {item.selectedSize}
                     </p>
+                    {item.personalization?.length ? (
+                      <div className="mt-2 rounded-xl bg-[var(--brand-soft)] px-3 py-2 text-xs text-[var(--ink)]">
+                        {item.personalization.map((answer) => (
+                          <p key={answer.fieldId}>
+                            <span className="font-bold">{answer.label}:</span> {answer.value}
+                          </p>
+                        ))}
+                        {item.personalizationSurcharge ? (
+                          <p className="mt-1 font-bold text-[var(--brand-violet-deep)]">
+                            Personalización +{formatCurrency(item.personalizationSurcharge)}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   <p className="text-2xl font-black text-[var(--brand-violet-deep)]">
                     {formatCurrency(item.product.price * item.quantity)}
@@ -192,6 +227,17 @@ export function CartPage() {
           <Button className="mt-3 w-full" type="button" variant="secondary">
             Seguir comprando
           </Button>
+          {whatsappSettings ? (
+            <a
+              className="mt-3 flex w-full items-center justify-center gap-2 text-sm font-bold text-[var(--brand-violet-deep)]"
+              href={buildWhatsAppLink(whatsappSettings.phoneNumber, buildCartSummaryMessage(cart, subtotal))}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              Contactar por WhatsApp
+            </a>
+          ) : null}
         </aside>
       </div>
     </div>

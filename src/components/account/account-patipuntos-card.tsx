@@ -7,16 +7,20 @@ import { buttonStyles } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { getMyLoyaltyAccount, getLoyaltySettings, type LoyaltyAccount, type LoyaltySettings } from "@/lib/vendure/patipuntos-client";
 import { getStoredAccountEmail } from "@/lib/vendure/pets-client";
+import { useStore } from "@/store/store-provider";
 
-/** Same self-fetching pattern as AccountPetsCard — gated on the shared email-identity key, fails
- *  soft to "no points yet" if there's no known email or Vendure is unreachable. */
+/** Same self-fetching pattern as AccountPetsCard — prefers a real logged-in session's email, falls
+ *  back to the shared email-identity key for guests, fails soft to "no points yet" if there's no
+ *  known email or Vendure is unreachable. */
 export function AccountPatipuntosCard() {
+  const { activeCustomer, isAuthReady } = useStore();
   const [account, setAccount] = useState<LoyaltyAccount | null>(null);
   const [settings, setSettings] = useState<LoyaltySettings | null>(null);
   const [hasEmail, setHasEmail] = useState(false);
 
   useEffect(() => {
-    const email = getStoredAccountEmail();
+    if (!isAuthReady) return;
+    const email = activeCustomer?.emailAddress ?? getStoredAccountEmail();
     if (!email) return;
     setHasEmail(true);
     Promise.all([getMyLoyaltyAccount(email), getLoyaltySettings()])
@@ -27,7 +31,7 @@ export function AccountPatipuntosCard() {
       .catch(() => {
         // Vendure unreachable or the account doesn't exist yet — card just shows the empty state.
       });
-  }, []);
+  }, [activeCustomer, isAuthReady]);
 
   const balance = account?.balance ?? 0;
   const value = settings ? balance * settings.pointValue : 0;

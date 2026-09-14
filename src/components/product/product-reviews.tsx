@@ -9,7 +9,7 @@ import type { ProductReview } from "@/lib/vendure/reviews";
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "long" });
 
-function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted: () => void }) {
+function ReviewForm({ productId }: { productId: string }) {
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
   const [rating, setRating] = useState(5);
@@ -25,7 +25,6 @@ function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted
     try {
       await submitProductReview({ productId, authorName, authorEmail, rating, title, body });
       setStatus("done");
-      onSubmitted();
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : "No se pudo enviar tu reseña.");
@@ -145,14 +144,10 @@ export function ProductReviews({
         ) : null}
       </div>
 
-      {showForm && canReview ? (
-        <ReviewForm
-          onSubmitted={() => {
-            setShowForm(false);
-          }}
-          productId={productId}
-        />
-      ) : null}
+      {/* Stays mounted after a successful submit — ReviewForm's own "done" branch shows the
+          thank-you message in place of the fields. Unmounting it here (e.g. via a callback that
+          reset showForm) would throw that state away before it ever got a chance to render. */}
+      {showForm && canReview ? <ReviewForm productId={productId} /> : null}
 
       {reviews.length > 0 ? (
         <ul className="space-y-4">

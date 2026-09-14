@@ -6,7 +6,7 @@ tags:
   - contexto
   - patilandia
 status: activo
-updated: 2026-09-11 (migración completa de Medusa a Vendure — ver [[Decisiones y Razonamiento]])
+updated: 2026-09-12 (cuentas reales de cliente + primer despliegue en VPS, staging temporal — ver [[Decisiones y Razonamiento]])
 ---
 
 # Contexto Patilandia
@@ -51,14 +51,15 @@ Detalle de componentes por ruta en [[Mapa de Rutas y Componentes]].
 - **`storefront.ts`** — punto único de entrada para leer productos. `getStorefrontProducts()` pide un query GraphQL a la Shop API de Vendure (`vendureFetch`); si no hay respuesta (Vendure caído) cae a los mocks de `data/mock-store.ts`. Las 9 rutas pasan por `lib/storefront.ts` de forma consistente — ningún componente sabe si el dato vino de Vendure o de un mock.
 - **`vendure/client.ts`** — `vendureFetch<T>()`: POST a la Shop API. Falla en silencio (retorna `null`) ante cualquier error de red o de GraphQL — mismo principio fail-soft que tenía el cliente de Medusa.
 - **`vendure/adapters.ts`** — `adaptVendureProduct()`: convierte el nodo `Product` de la Shop API (facetValues, variants, customFields) al tipo `StorefrontProduct`. Categoría/colección temática/petType salen de Facets; talla/color de ProductVariants reales; el resto de customFields tipados. También expone `adaptVendureOrderLine()` para construir líneas de carrito desde un `OrderLine` real.
-- **`vendure/shop-client.ts`** — cliente de sesión para carrito/checkout (bearer token en `localStorage`): `addItemToOrder`, `adjustOrderLine`, `removeOrderLine`, `setCustomerEmail`/`updateCustomerName`, `setShippingAddress`, `setShippingMethod`, `placeOrder`.
+- **`vendure/shop-fetch.ts`** — el cliente GraphQL con manejo de token (bearer, `localStorage["patilandia-vendure-token"]"`), usado por todo lo que necesita actuar como "quien esté usando el navegador" (carrito/checkout, Mascotas, Wishlist, Patipuntos, login/registro). Extraído de `shop-client.ts` el 2026-09-12 al construir cuentas reales, porque los otros tres clientes tenían cada uno su propia copia suelta sin este manejo de sesión — un bug real que hacía que ninguna sesión logueada les llegara.
+- **`vendure/shop-client.ts`** — cliente de sesión para carrito/checkout/cuenta: `addItemToOrder`, `adjustOrderLine`, `removeOrderLine`, `setCustomerEmail`/`updateCustomerName`, `setShippingAddress`, `setShippingMethod`, `placeOrder`, y desde 2026-09-12 `getActiveCustomer`/`registerCustomerAccount`/`verifyCustomerAccount`/`login`/`logout`/`requestPasswordReset`/`resetPassword`.
 - **`shipping.ts`** — `getShippingPreview(items)`: NO calcula un número. Devuelve un mensaje contextual ("cotización pendiente" si hay producto `bulky`/`heavy`/`custom` o peso total ≥ 8kg; "se calcula en checkout" si el carrito está vacío) — usado solo como estimado previo al checkout; el envío real (tarifa fija por transportadora, no por peso todavía) se calcula en `/checkout` contra Vendure. Ver razonamiento en [[Shipping — Arquitectura de Envíos]].
 
 Detalle completo de la migración de Medusa a Vendure en [[Decisiones y Razonamiento]] (entradas del 2026-09-10 y 2026-09-11).
 
 ## Estado global de cliente (`src/store/store-provider.tsx`)
 
-`StoreProvider` (Context API) expone `cart` (espejo del `activeOrder` real de Vendure, ya no local), `wishlist` (local + sincronizada a Vendure apenas hay un correo conocido — ver [[Decisiones y Razonamiento]] 2026-09-12), `addToCart`/`updateQuantity`/`removeFromCart` (ahora async, mutan la orden real), `setCustomerEmail`/`updateCustomerName`/`setShippingAddress`/`setShippingMethod`/`placeOrder`, `toggleWishlist`, `isWishlisted`, más `cartCount`/`wishlistCount`/`subtotal`/`shippingTotal`/`total` derivados. La sesión de carrito vive en un bearer token guardado en `localStorage` (`patilandia-vendure-token`); el wishlist tiene su propia key (`patilandia-wishlist-v1`).
+`StoreProvider` (Context API) expone `cart` (espejo del `activeOrder` real de Vendure, ya no local), `wishlist` (local + sincronizada a Vendure apenas hay un correo conocido — ver [[Decisiones y Razonamiento]] 2026-09-12), `addToCart`/`updateQuantity`/`removeFromCart` (ahora async, mutan la orden real), `setCustomerEmail`/`updateCustomerName`/`setShippingAddress`/`setShippingMethod`/`placeOrder`, `toggleWishlist`, `isWishlisted`, más `cartCount`/`wishlistCount`/`subtotal`/`shippingTotal`/`total` derivados. Desde 2026-09-12 también expone `activeCustomer`/`isLoggedIn`/`login`/`logout`/`register` (cuentas reales sobre Vendure) — `customerEmail` se resuelve como `activeCustomer?.emailAddress ?? order?.customerEmail`, así que el comportamiento de invitado no cambió en nada. La sesión (de invitado o logueada, es el mismo mecanismo) vive en un bearer token guardado en `localStorage` (`patilandia-vendure-token`); el wishlist tiene su propia key (`patilandia-wishlist-v1`).
 
 ## Identidad visual ya aplicada (no es un mockup, es código real)
 
@@ -94,13 +95,18 @@ Detalle de tokens, componentes y patrones visuales en [[Design System]]. Detalle
 | Conexión a Vendure | ✅ **Backend Vendure corriendo en local** (`http://localhost:3000`), `.env.local` del storefront apunta a la Shop API. Ver [[Entorno de Desarrollo Local]] |
 | Dashboard de administración | ✅ Real — "Patilandia Admin" sobre el Dashboard de Vendure, con marca propia (login, colores) y una sección de navegación propia. Ver [[Decisiones y Razonamiento]] (Fase 6) |
 | Pagos reales (Wompi/Mercado Pago) | ❌ No iniciado a propósito (correcto según brief, es fase posterior) — el punto de integración (`addPaymentToOrder`) ya funciona con un handler de prueba |
-| Cuenta/autenticación de clientes | ❌ Placeholder visual, sin lógica |
+| Cuenta/autenticación de clientes | ✅ Real desde 2026-09-12 — registro con verificación por correo, login/logout, recuperación de contraseña, sobre la autenticación nativa de Vendure. El checkout de invitado se mantiene (cuenta opcional); Mascotas/Wishlist/Patipuntos prefieren la sesión real cuando existe y caen al correo solo para invitados sin cuenta. Ver [[Decisiones y Razonamiento]] |
 | Cálculo real de envío por peso/volumen/destino | ⚠️ Envío real por tarifa fija (no por peso todavía) — mensaje contextual de "cotización pendiente" para pedidos pesados/voluminosos en el carrito. Ver [[Shipping — Arquitectura de Envíos]] |
-| Tasa de impuesto | ⚠️ Genérica (20%, zona "Americas" de la sample data de Vendure), no el 19% real de Colombia — pendiente antes de producción |
+| Tasa de impuesto | ✅ 19% real de Colombia, ya no la genérica de la sample data — ver [[Decisiones y Razonamiento]] (2026-09-11) |
+| Despliegue en servidor real | ✅ Real desde 2026-09-12 — `https://patilandia.com.co` y `https://api.patilandia.com.co` (Dashboard en `/dashboard`), VPS de GCP compartido con Argus, HTTPS vía Certbot. **Es staging temporal** (~24 días de vida restantes al VPS desde esa fecha) y le falta el endurecimiento de seguridad antes de ser el despliegue definitivo (CORS abierto, CSRF apagado, `trustProxy`/`assetUrlPrefix` sin revisar). Ver [[Decisiones y Razonamiento]] y [[Pendientes Claude]] |
 
 ## Backend Vendure
 
-Repo hermano: `C:\Users\Leonardo\Desktop\patilandia-vendure` (inicializado por `@vendure/create`, aún sin commits). Reemplazó por completo a Medusa (`patilandia-backend`, borrado del disco el 2026-09-11 a pedido explícito del usuario — ver [[Decisiones y Razonamiento]]). Detalle de cómo levantarlo, credenciales y estructura en [[Entorno de Desarrollo Local]].
+Repo hermano: `C:\Users\Leonardo\Desktop\patilandia-vendure` — GitHub `Andrescutellez/patilandia-backend` (rama `main`). Reemplazó por completo a Medusa (`patilandia-backend` local viejo, borrado del disco el 2026-09-11 a pedido explícito del usuario — ver [[Decisiones y Razonamiento]]). Detalle de cómo levantarlo, credenciales y estructura en [[Entorno de Desarrollo Local]].
+
+## Despliegue
+
+Desde 2026-09-12, Patilandia corre además en un VPS real (GCP, compartido con un proyecto ajeno llamado Argus, bajo la regla estricta de no tocarlo para nada): `https://patilandia.com.co` (storefront) y `https://api.patilandia.com.co` (Vendure Shop/Admin API + Dashboard en `/dashboard`), HTTPS real vía Certbot. **Es un despliegue de staging temporal** — el VPS le queda ~24 días de vida al usuario desde esa fecha (hasta ~2026-10-06), después hay que migrar todo a un VPS definitivo repitiendo la misma arquitectura (Postgres aislado + PM2 + Nginx) y cerrando el endurecimiento de seguridad pendiente. Detalle completo de la arquitectura, los bugs encontrados y el checklist de migración en [[Decisiones y Razonamiento]] (2026-09-12) y [[Pendientes Claude]].
 
 ## Build health (verificado 2026-09-11, tras la baja de Medusa)
 

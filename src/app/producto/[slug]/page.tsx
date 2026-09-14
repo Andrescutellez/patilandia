@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 
 import { ProductDetail } from "@/components/product/product-detail";
 import { getRelatedProducts, getStorefrontProduct } from "@/lib/storefront";
+import { getPersonalizationConfig } from "@/lib/vendure/personalization";
+import { getProductQuestions } from "@/lib/vendure/qa";
 import { getProductReviews } from "@/lib/vendure/reviews";
+import { getWhatsappSettings } from "@/lib/whatsapp";
 import { SITE_URL } from "@/lib/site-config";
 
 interface ProductPageProps {
@@ -50,9 +53,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const [reviews, relatedProducts] = await Promise.all([
+  const [reviews, questions, personalizationConfig, relatedProducts, whatsappSettings] = await Promise.all([
     getProductReviews(product.id),
-    getRelatedProducts(product)
+    getProductQuestions(product.id),
+    getPersonalizationConfig(product.id),
+    getRelatedProducts(product),
+    getWhatsappSettings()
   ]);
 
   const jsonLd = {
@@ -99,7 +105,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
       />
-      <ProductDetail product={product} relatedProducts={relatedProducts} reviews={reviews} />
+      <ProductDetail
+        personalizationConfig={personalizationConfig}
+        product={product}
+        questions={questions}
+        relatedProducts={relatedProducts}
+        reviews={reviews}
+        whatsappSettings={whatsappSettings}
+      />
     </>
   );
 }

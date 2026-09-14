@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
+import { WhatsAppIcon } from "@/components/ui/icons";
 import {
   CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
   getEligibleShippingMethods,
@@ -23,6 +24,13 @@ import {
   type LoyaltySettings
 } from "@/lib/vendure/patipuntos-client";
 import { getStoredAccountEmail } from "@/lib/vendure/pets-client";
+import {
+  buildCartSummaryMessage,
+  buildOrderInquiryMessage,
+  buildWhatsAppLink,
+  getWhatsappSettings,
+  type WhatsappSettings
+} from "@/lib/whatsapp";
 import { useStore } from "@/store/store-provider";
 
 interface AddressForm {
@@ -43,6 +51,22 @@ const EMPTY_ADDRESS: AddressForm = {
   phoneNumber: ""
 };
 
+const ADDRESS_FIELDS: Array<[key: keyof AddressForm, label: string, span: string, required: boolean]> = [
+  ["fullName", "Nombre completo", "sm:col-span-2", true],
+  ["streetLine1", "Dirección", "sm:col-span-2", true],
+  ["city", "Ciudad", "", true],
+  ["province", "Departamento", "", false],
+  ["postalCode", "Código postal", "", false],
+  ["phoneNumber", "Teléfono", "", false]
+];
+
+interface RecipientExtra {
+  neighborhood: string;
+  deliveryNotes: string;
+}
+
+const EMPTY_RECIPIENT_EXTRA: RecipientExtra = { neighborhood: "", deliveryNotes: "" };
+
 export function CheckoutPage() {
   const {
     cart,
@@ -55,12 +79,24 @@ export function CheckoutPage() {
     updateCustomerName,
     setShippingAddress,
     setShippingMethod,
+    setGiftDetails,
     placeOrder,
-    cartError
+    cartError,
+    cartErrorCode,
+    isLoggedIn
   } = useStore();
 
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState<AddressForm>(EMPTY_ADDRESS);
+
+  const [isGift, setIsGift] = useState(false);
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
+  const [giftSenderName, setGiftSenderName] = useState("");
+  const [giftAnonymous, setGiftAnonymous] = useState(false);
+  const [giftDeliverToOther, setGiftDeliverToOther] = useState(false);
+  const [recipientExtra, setRecipientExtra] = useState<RecipientExtra>(EMPTY_RECIPIENT_EXTRA);
+
   const [shippingMethods, setShippingMethods] = useState<ShippingMethodOption[]>([]);
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,6 +110,14 @@ export function CheckoutPage() {
   const [loyaltyRules, setLoyaltyRules] = useState<LoyaltyRule[]>([]);
   const [redeemPoints, setRedeemPoints] = useState(0);
   const [redeemError, setRedeemError] = useState<string | null>(null);
+
+  // Self-fetched, same pattern as CartPage — this is a client component with no access to the
+  // server-side fetch SiteShell already did for the floating button.
+  const [whatsappSettings, setWhatsappSettings] = useState<WhatsappSettings | null>(null);
+
+  useEffect(() => {
+    getWhatsappSettings().then(setWhatsappSettings);
+  }, []);
 
   useEffect(() => {
     getEligibleShippingMethods()
@@ -164,9 +208,22 @@ export function CheckoutPage() {
           </div>
         ) : null}
 
-        <Link className={buttonStyles({ size: "lg", className: "mt-8" })} href="/tienda">
-          Seguir explorando
-        </Link>
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <Link className={buttonStyles({ size: "lg" })} href="/tienda">
+            Seguir explorando
+          </Link>
+          {whatsappSettings ? (
+            <a
+              className={buttonStyles({ size: "lg", variant: "secondary" })}
+              href={buildWhatsAppLink(whatsappSettings.phoneNumber, buildOrderInquiryMessage(completedOrder.code))}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              Consultar mi pedido por WhatsApp
+            </a>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -203,10 +260,30 @@ export function CheckoutPage() {
         confirmedEmail = email;
       }
 
-      // The email step only ever captures a placeholder name — now that the address form has a
-      // real one, correct the customer record before finishing the order.
-      await updateCustomerName(confirmedEmail, address.fullName);
+      // The email step only ever captures a placeholder name for a guest — a logged-in customer
+      // already has a real name from registration, and calling this while logged in throws
+      // AlreadyLoggedInError (setCustomerForOrder refuses to touch a session's own customer this
+      // way), which would otherwise block every registered customer's checkout.
+      if (!isLoggedIn) {
+        await updateCustomerName(confirmedEmail, address.fullName);
+      }
 
+      // Applied before the shipping address so a failure here doesn't leave the order stuck
+      // between the two — if it fails, checkout just stops with a visible error like any other
+      // step. Only ever called when the shopper actually opted in; a normal checkout never touches
+      // Order.customFields' gift fields at all.
+      if (isGift) {
+        const giftOk = await setGiftDetails({
+          isGift: true,
+          giftWrap,
+          giftMessage: giftMessage.trim() || undefined,
+          giftSenderName: giftAnonymous ? undefined : giftSenderName.trim() || undefined,
+          giftAnonymous
+        });
+        if (!giftOk) return;
+      }
+
+      const shipToOther = isGift && giftDeliverToOther;
       const addressOk = await setShippingAddress({
         fullName: address.fullName,
         streetLine1: address.streetLine1,
@@ -214,7 +291,13 @@ export function CheckoutPage() {
         province: address.province || undefined,
         postalCode: address.postalCode || undefined,
         phoneNumber: address.phoneNumber || undefined,
-        countryCode: "CO"
+        countryCode: "CO",
+        ...(shipToOther
+          ? {
+              neighborhood: recipientExtra.neighborhood.trim() || undefined,
+              deliveryNotes: recipientExtra.deliveryNotes.trim() || undefined
+            }
+          : {})
       });
       if (!addressOk || !selectedShippingMethodId) return;
 
@@ -251,7 +334,15 @@ export function CheckoutPage() {
         <h1 className="mt-3 font-display text-5xl leading-none text-[var(--ink)]">Listo para completar la orden</h1>
       </div>
 
-      {cartError ? (
+      {cartErrorCode === "EMAIL_ADDRESS_CONFLICT_ERROR" ? (
+        <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Ya existe una cuenta con este correo.{" "}
+          <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/checkout">
+            Iniciá sesión
+          </Link>{" "}
+          para continuar con tu compra.
+        </div>
+      ) : cartError ? (
         <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">{cartError}</p>
       ) : null}
 
@@ -275,30 +366,149 @@ export function CheckoutPage() {
           ) : null}
 
           <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
-            <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Dirección de envío</h2>
+            <label className="flex cursor-pointer items-center justify-between gap-4">
+              <span>
+                <span className="block font-display text-4xl leading-none text-[var(--ink)]">
+                  🎁 ¿Es un regalo?
+                </span>
+                <span className="mt-1 block text-sm text-[var(--muted)]">
+                  Envolvé el pedido, agregá un mensaje o mandalo a otra dirección.
+                </span>
+              </span>
+              <input
+                checked={isGift}
+                className="h-6 w-6 accent-[var(--brand-violet)]"
+                onChange={(event) => setIsGift(event.target.checked)}
+                type="checkbox"
+              />
+            </label>
+
+            {isGift ? (
+              <div className="mt-6 space-y-5 border-t border-[var(--line)] pt-5">
+                <label className="flex items-center gap-3">
+                  <input
+                    checked={giftWrap}
+                    className="h-5 w-5 accent-[var(--brand-violet)]"
+                    onChange={(event) => setGiftWrap(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="text-sm font-semibold text-[var(--ink)]">Envolver para regalo</span>
+                </label>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-[var(--ink)]">Mensaje para la tarjeta (opcional)</span>
+                  <textarea
+                    className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm outline-none"
+                    maxLength={280}
+                    onChange={(event) => setGiftMessage(event.target.value)}
+                    placeholder="Escribí unas palabras para quien lo recibe"
+                    rows={3}
+                    value={giftMessage}
+                  />
+                </label>
+
+                <label className="flex items-center gap-3">
+                  <input
+                    checked={giftAnonymous}
+                    className="h-5 w-5 accent-[var(--brand-violet)]"
+                    onChange={(event) => setGiftAnonymous(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span className="text-sm font-semibold text-[var(--ink)]">Enviar como regalo anónimo</span>
+                </label>
+
+                {!giftAnonymous ? (
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-[var(--ink)]">Tu nombre como remitente (opcional)</span>
+                    <input
+                      className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+                      onChange={(event) => setGiftSenderName(event.target.value)}
+                      placeholder="¿Quién lo regala?"
+                      type="text"
+                      value={giftSenderName}
+                    />
+                  </label>
+                ) : null}
+
+                <div className="grid gap-3">
+                  <span className="text-sm font-bold text-[var(--ink)]">¿A dónde lo enviamos?</span>
+                  {(
+                    [
+                      [false, "Enviar a mi dirección"],
+                      [true, "Enviar a otra dirección"]
+                    ] as const
+                  ).map(([value, label]) => (
+                    <label
+                      className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
+                        giftDeliverToOther === value
+                          ? "border-[var(--brand-violet)] bg-[var(--brand-soft)]"
+                          : "border-[var(--line)]"
+                      }`}
+                      key={String(value)}
+                    >
+                      <input
+                        checked={giftDeliverToOther === value}
+                        name="giftDeliverTo"
+                        onChange={() => setGiftDeliverToOther(value)}
+                        type="radio"
+                      />
+                      <span className="font-semibold text-[var(--ink)]">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
+            <h2 className="font-display text-4xl leading-none text-[var(--ink)]">
+              {isGift && giftDeliverToOther ? "Dirección del destinatario" : "Dirección de envío"}
+            </h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {(
-                [
-                  ["fullName", "Nombre completo", "sm:col-span-2"],
-                  ["streetLine1", "Dirección", "sm:col-span-2"],
-                  ["city", "Ciudad", ""],
-                  ["province", "Departamento", ""],
-                  ["postalCode", "Código postal", ""],
-                  ["phoneNumber", "Teléfono", ""]
-                ] as const
-              ).map(([field, label, span]) => (
+              {ADDRESS_FIELDS.map(([field, label, span, required]) => (
                 <label className={`grid gap-2 ${span}`} key={field}>
                   <span className="text-sm font-bold text-[var(--ink)]">{label}</span>
                   <input
                     className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
                     onChange={(event) => setAddress((current) => ({ ...current, [field]: event.target.value }))}
                     placeholder={label}
-                    required={field === "fullName" || field === "streetLine1" || field === "city"}
+                    required={required}
                     type="text"
                     value={address[field]}
                   />
                 </label>
               ))}
+
+              {isGift && giftDeliverToOther ? (
+                <>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-[var(--ink)]">Barrio</span>
+                    <input
+                      className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+                      onChange={(event) =>
+                        setRecipientExtra((current) => ({ ...current, neighborhood: event.target.value }))
+                      }
+                      placeholder="Barrio"
+                      type="text"
+                      value={recipientExtra.neighborhood}
+                    />
+                  </label>
+                  <label className="grid gap-2 sm:col-span-2">
+                    <span className="text-sm font-bold text-[var(--ink)]">
+                      Información adicional para la entrega (opcional)
+                    </span>
+                    <input
+                      className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+                      onChange={(event) =>
+                        setRecipientExtra((current) => ({ ...current, deliveryNotes: event.target.value }))
+                      }
+                      placeholder="Ej. apartamento 302, portería, punto de referencia"
+                      type="text"
+                      value={recipientExtra.deliveryNotes}
+                    />
+                  </label>
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -385,6 +595,11 @@ export function CheckoutPage() {
                   <p className="mt-1 text-[var(--muted)]">
                     {item.quantity} × {formatCurrency(item.product.price)}
                   </p>
+                  {item.personalization?.length ? (
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {item.personalization.map((answer) => `${answer.label}: ${answer.value}`).join(" · ")}
+                    </p>
+                  ) : null}
                 </div>
                 <span className="font-bold text-[var(--ink)]">{formatCurrency(item.product.price * item.quantity)}</span>
               </div>
@@ -448,6 +663,17 @@ export function CheckoutPage() {
           <Link className={buttonStyles({ variant: "ghost", className: "mt-4 w-full" })} href="/carrito">
             Volver al carrito
           </Link>
+          {whatsappSettings ? (
+            <a
+              className="mt-4 flex w-full items-center justify-center gap-2 text-sm font-bold text-[var(--brand-violet-deep)]"
+              href={buildWhatsAppLink(whatsappSettings.phoneNumber, buildCartSummaryMessage(cart, subtotal))}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              Contactar por WhatsApp
+            </a>
+          ) : null}
         </aside>
       </div>
     </form>

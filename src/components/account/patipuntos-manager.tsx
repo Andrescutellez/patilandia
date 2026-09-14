@@ -16,6 +16,7 @@ import {
   type LoyaltyTransaction
 } from "@/lib/vendure/patipuntos-client";
 import { getStoredAccountEmail, storeAccountEmail } from "@/lib/vendure/pets-client";
+import { useStore } from "@/store/store-provider";
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" });
 
@@ -104,7 +105,7 @@ function VerificationBanner({ email, onVerified }: { email: string; onVerified: 
   );
 }
 
-function PatipuntosDashboard({ email }: { email: string }) {
+function PatipuntosDashboard({ email, isLoggedIn }: { email: string; isLoggedIn: boolean }) {
   const [account, setAccount] = useState<LoyaltyAccount | null>(null);
   const [settings, setSettings] = useState<LoyaltySettings | null>(null);
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
@@ -144,7 +145,9 @@ function PatipuntosDashboard({ email }: { email: string }) {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-4xl leading-none text-[var(--ink)]">Tus Patipuntos</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Sesión iniciada como {email}</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          {isLoggedIn ? `Conectado como ${email}` : `Identificado por correo: ${email}`}
+        </p>
       </div>
 
       <div className="rounded-[2rem] border border-white/60 bg-white/84 p-8 text-center shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
@@ -221,13 +224,15 @@ function PatipuntosDashboard({ email }: { email: string }) {
 }
 
 export function PatipuntosManager() {
+  const { activeCustomer, isAuthReady } = useStore();
   const [email, setEmail] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setEmail(getStoredAccountEmail());
+    if (!isAuthReady) return;
+    setEmail(activeCustomer?.emailAddress ?? getStoredAccountEmail());
     setHydrated(true);
-  }, []);
+  }, [isAuthReady, activeCustomer]);
 
   if (!hydrated) return null;
 
@@ -242,5 +247,5 @@ export function PatipuntosManager() {
     );
   }
 
-  return <PatipuntosDashboard email={email} />;
+  return <PatipuntosDashboard email={email} isLoggedIn={activeCustomer !== null} />;
 }

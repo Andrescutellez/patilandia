@@ -59,6 +59,7 @@ export interface VendureProduct {
     reviewCount?: number | null;
     badge?: string | null;
     featured?: boolean | null;
+    repurchaseEnabled?: boolean | null;
   } | null;
 }
 
@@ -159,14 +160,28 @@ export function adaptVendureProduct(record: VendureProduct): StorefrontProduct {
     weightKg: firstVariant?.customFields?.weightKg ?? 1.5,
     stock: computeStock(record.variants),
     featured: Boolean(customFields.featured),
+    repurchaseEnabled: Boolean(customFields.repurchaseEnabled),
     tags: [categorySlug, themeSlug].filter((value): value is string => Boolean(value)),
     variants: toVariantRefs(record.variants)
   };
 }
 
+/** One answer the shopper gave for a personalized line — snapshotted at add-to-cart time so it
+ *  stays readable even if the admin later renames or removes that field/option. */
+export interface PersonalizationAnswer {
+  fieldId: string;
+  label: string;
+  value: string;
+}
+
 export interface VendureOrderLine {
   id: string;
   quantity: number;
+  /** Pre-tax, per-unit — already reflects any personalization surcharge (see
+   *  PersonalizationPriceCalculationStrategy backend-side), unlike `productVariant.price` below
+   *  which is always the plain catalog price regardless of what this specific line paid. */
+  unitPrice: number;
+  customFields?: { personalizationValues?: string | null } | null;
   productVariant: {
     id: string;
     sku: string;
@@ -210,7 +225,7 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
     description: "",
     image,
     galleryImages: [image],
-    price: variant.price / VENDURE_MONEY_FACTOR,
+    price: line.unitPrice / VENDURE_MONEY_FACTOR,
     rating: 0,
     reviewCount: 0,
     theme: readTheme(themeSlug),
@@ -227,11 +242,24 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
     tags: []
   };
 
+  let personalization: PersonalizationAnswer[] | undefined;
+  if (line.customFields?.personalizationValues) {
+    try {
+      personalization = JSON.parse(line.customFields.personalizationValues) as PersonalizationAnswer[];
+    } catch {
+      // Shouldn't happen (only our own code ever writes this field), but a display glitch here
+      // shouldn't break the whole cart if it somehow does.
+    }
+  }
+  const personalizationSurcharge = Math.max(0, (line.unitPrice - variant.price) / VENDURE_MONEY_FACTOR);
+
   return {
     id: line.id,
     product: product_,
     quantity: line.quantity,
     selectedSize: size as ProductSize,
-    selectedColor: { name: color?.name ?? "", hex: color?.customFields?.hex ?? "#8b73ff" }
+    selectedColor: { name: color?.name ?? "", hex: color?.customFields?.hex ?? "#8b73ff" },
+    personalization,
+    personalizationSurcharge: personalizationSurcharge > 0 ? personalizationSurcharge : undefined
   };
 }

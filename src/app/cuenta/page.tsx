@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+import { AccountHeader } from "@/components/account/account-header";
 import { AccountPatipuntosCard } from "@/components/account/account-patipuntos-card";
 import { AccountPetsCard } from "@/components/account/account-pets-card";
+import { AccountSubscriptionsCard } from "@/components/account/account-subscriptions-card";
 import { AccountWishlistCard } from "@/components/account/account-wishlist-card";
 import { buttonStyles } from "@/components/ui/button";
 import { getStorefrontProducts } from "@/lib/storefront";
@@ -31,10 +33,13 @@ export default async function AccountPage() {
         <h1 className="mt-3 font-display text-5xl leading-none text-[var(--ink)]">Tu universo personal</h1>
       </div>
 
+      <AccountHeader />
+
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <AccountWishlistCard products={products} />
         <AccountPetsCard />
         <AccountPatipuntosCard />
+        <AccountSubscriptionsCard />
         {comingSoonCards.map((card) => (
           <div
             key={card.title}

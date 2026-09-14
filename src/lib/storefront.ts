@@ -28,6 +28,7 @@ const PRODUCT_FIELDS = `
     reviewCount
     badge
     featured
+    repurchaseEnabled
   }
 `;
 

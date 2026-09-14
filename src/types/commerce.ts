@@ -70,6 +70,9 @@ export interface StorefrontProduct {
   weightKg: number;
   stock: number;
   featured?: boolean;
+  /** Whether this product can be scheduled for repurchase — set from the admin's product editor
+   *  (Product.customFields.repurchaseEnabled). See product-subscription.tsx. */
+  repurchaseEnabled?: boolean;
   tags: string[];
   /** Real Vendure variant ids per size/color, needed to add a specific variant to a real cart.
    *  Undefined for mock/fallback data (no backend order to add to anyway in that case). */
@@ -93,4 +96,11 @@ export interface CartLineItem {
   quantity: number;
   selectedSize: ProductSize;
   selectedColor: ProductColor;
+  /** The answers the shopper gave for this line's personalization, if any — see
+   *  ProductPersonalization. Undefined for a line that isn't personalized. */
+  personalization?: Array<{ fieldId: string; label: string; value: string }>;
+  /** Decimal currency (COP), pre-tax — the extra this specific line cost due to personalization.
+   *  Undefined (not 0) when there's no surcharge, so callers can use it directly as a "show this
+   *  row at all" check. */
+  personalizationSurcharge?: number;
 }

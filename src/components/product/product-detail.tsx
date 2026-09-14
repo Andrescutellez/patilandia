@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, buttonStyles } from "@/components/ui/button";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ProductCard } from "@/components/products/product-card";
+import { ProductQA } from "@/components/product/product-qa";
+import { ProductPersonalization, type PersonalizationAnswerDraft } from "@/components/product/product-personalization";
 import { ProductReviews } from "@/components/product/product-reviews";
+import { ProductSubscription } from "@/components/product/product-subscription";
+import { VariantPicker } from "@/components/product/variant-picker";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
 import { RatingStars } from "@/components/ui/rating-stars";
-import { CrownIcon, HeartIcon, ShieldIcon, SparklesIcon, TruckIcon } from "@/components/ui/icons";
+import { CrownIcon, HeartIcon, ShieldIcon, SparklesIcon, TruckIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { formatCurrency, percentageOff } from "@/lib/utils";
+import { buildProductHelpMessage, buildProductInterestMessage, buildWhatsAppLink, type WhatsappSettings } from "@/lib/whatsapp";
 import { useStore } from "@/store/store-provider";
+import type { PersonalizationConfig } from "@/lib/vendure/personalization";
+import type { ProductQuestion } from "@/lib/vendure/qa";
 import type { ProductReview } from "@/lib/vendure/reviews";
 import type { ProductColor, ProductSize, StorefrontProduct } from "@/types/commerce";
 
@@ -24,18 +31,35 @@ const iconMap = {
 
 export function ProductDetail({
   product,
+  personalizationConfig,
+  questions,
   relatedProducts,
-  reviews
+  reviews,
+  whatsappSettings
 }: {
   product: StorefrontProduct;
+  personalizationConfig: PersonalizationConfig | null;
+  questions: ProductQuestion[];
   relatedProducts: StorefrontProduct[];
   reviews: ProductReview[];
+  whatsappSettings: WhatsappSettings | null;
 }) {
-  const { addToCart, isWishlisted, toggleWishlist } = useStore();
+  const { addToCart, isLoggedIn, isWishlisted, toggleWishlist, setWhatsappMessage } = useStore();
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<ProductSize>(product.sizes[1] ?? product.sizes[0]);
   const [quantity, setQuantity] = useState(1);
+  const [personalizationAnswers, setPersonalizationAnswers] = useState<PersonalizationAnswerDraft[]>([]);
+  const [personalizationValid, setPersonalizationValid] = useState(!personalizationConfig);
   const discount = percentageOff(product.price, product.compareAtPrice);
+
+  // Feeds the global WhatsApp floating button (see whatsapp-floating-button.tsx) a message specific
+  // to this product while it's on screen, restoring the generic default the moment the shopper
+  // navigates away — a stale "I'm interested in X" message must never survive to a different page.
+  useEffect(() => {
+    setWhatsappMessage(buildProductInterestMessage(product.name));
+    return () => setWhatsappMessage(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.name]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -106,53 +130,37 @@ export function ProductDetail({
             })}
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-bold text-[var(--ink)]">Color: {selectedColor.name}</p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    aria-label={color.name}
-                    className={`h-11 w-11 rounded-full border-2 ${
-                      selectedColor.name === color.name ? "border-[var(--brand-violet)]" : "border-white"
-                    } shadow-[0_8px_20px_rgba(31,36,84,0.08)]`}
-                    onClick={() => setSelectedColor(color)}
-                    style={{ backgroundColor: color.hex }}
-                    type="button"
-                  />
-                ))}
-              </div>
-            </div>
+          <VariantPicker
+            colors={product.colors}
+            onSelectColor={setSelectedColor}
+            onSelectSize={setSelectedSize}
+            selectedColor={selectedColor}
+            selectedSize={selectedSize}
+            sizes={product.sizes}
+          />
 
-            <div>
-              <p className="text-sm font-bold text-[var(--ink)]">Tamaño</p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    className={`min-w-14 rounded-full border px-5 py-3 text-sm font-bold transition ${
-                      selectedSize === size
-                        ? "border-[var(--brand-violet)] bg-[var(--brand-violet)] text-white"
-                        : "border-[var(--line)] bg-white text-[var(--ink)]"
-                    }`}
-                    onClick={() => setSelectedSize(size)}
-                    type="button"
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          {personalizationConfig ? (
+            <ProductPersonalization
+              config={personalizationConfig}
+              onChange={(answers, isValid) => {
+                setPersonalizationAnswers(answers);
+                setPersonalizationValid(isValid);
+              }}
+            />
+          ) : null}
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <QuantitySelector className="w-fit" onChange={setQuantity} value={quantity} />
             <Button
               className="flex-1"
+              disabled={Boolean(personalizationConfig) && !personalizationValid}
               onClick={() => {
                 for (let index = 0; index < quantity; index += 1) {
-                  addToCart(product, { size: selectedSize, color: selectedColor });
+                  addToCart(product, {
+                    size: selectedSize,
+                    color: selectedColor,
+                    personalization: personalizationAnswers.length ? personalizationAnswers : undefined
+                  });
                 }
               }}
               size="lg"
@@ -165,6 +173,24 @@ export function ProductDetail({
           <Link className={buttonStyles({ variant: "secondary", size: "lg", className: "w-full" })} href="/checkout">
             Comprar ahora
           </Link>
+
+          {whatsappSettings ? (
+            <button
+              className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[var(--brand-violet-deep)]"
+              onClick={() => {
+                const message = buildProductHelpMessage(
+                  product.name,
+                  `${selectedColor.name} / ${selectedSize}`,
+                  window.location.href
+                );
+                window.open(buildWhatsAppLink(whatsappSettings.phoneNumber, message), "_blank", "noopener,noreferrer");
+              }}
+              type="button"
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+              ¿Necesitás ayuda? Preguntanos por WhatsApp
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -202,12 +228,16 @@ export function ProductDetail({
         </div>
       </section>
 
+      {product.repurchaseEnabled ? <ProductSubscription isLoggedIn={isLoggedIn} product={product} /> : null}
+
       <ProductReviews
         productId={product.id}
         initialReviews={reviews}
         rating={product.rating}
         reviewCount={product.reviewCount}
       />
+
+      <ProductQA productId={product.id} initialQuestions={questions} />
 
       <section className="space-y-6">
         <div className="flex items-end justify-between gap-4">

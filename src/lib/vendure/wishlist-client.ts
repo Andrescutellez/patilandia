@@ -1,27 +1,6 @@
 "use client";
 
-const VENDURE_SHOP_API_URL =
-  process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL ?? "http://localhost:3000/shop-api";
-
-class WishlistApiError extends Error {}
-
-async function shopFetch<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const response = await fetch(VENDURE_SHOP_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables })
-  });
-
-  const payload = (await response.json()) as { data?: T; errors?: Array<{ message: string }> };
-
-  if (payload.errors?.length) {
-    throw new WishlistApiError(payload.errors[0].message);
-  }
-  if (!payload.data) {
-    throw new WishlistApiError("Vendure no devolvió datos.");
-  }
-  return payload.data;
-}
+import { shopFetch } from "./shop-fetch";
 
 const WISHLIST_ITEM_FIELDS = `product { id }`;
 

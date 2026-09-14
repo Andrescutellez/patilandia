@@ -15,6 +15,7 @@ import {
   type PetSize,
   type PetSpecies
 } from "@/lib/vendure/pets-client";
+import { useStore } from "@/store/store-provider";
 
 const speciesLabels: Record<PetSpecies, string> = { dog: "Perro", cat: "Gato", other: "Otra" };
 const sizeLabels: Record<Exclude<PetSize, "">, string> = {
@@ -172,7 +173,7 @@ function PetForm({
   );
 }
 
-function PetsList({ email }: { email: string }) {
+function PetsList({ email, isLoggedIn }: { email: string; isLoggedIn: boolean }) {
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -215,7 +216,9 @@ function PetsList({ email }: { email: string }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl leading-none text-[var(--ink)]">Tus mascotas</h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">Sesión iniciada como {email}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {isLoggedIn ? `Conectado como ${email}` : `Identificado por correo: ${email}`}
+          </p>
         </div>
         {!showForm ? (
           <Button onClick={() => setShowForm(true)} type="button">
@@ -277,13 +280,15 @@ function PetsList({ email }: { email: string }) {
 }
 
 export function PetsManager() {
+  const { activeCustomer, isAuthReady } = useStore();
   const [email, setEmail] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setEmail(getStoredAccountEmail());
+    if (!isAuthReady) return;
+    setEmail(activeCustomer?.emailAddress ?? getStoredAccountEmail());
     setHydrated(true);
-  }, []);
+  }, [isAuthReady, activeCustomer]);
 
   if (!hydrated) {
     return null;
@@ -300,5 +305,5 @@ export function PetsManager() {
     );
   }
 
-  return <PetsList email={email} />;
+  return <PetsList email={email} isLoggedIn={activeCustomer !== null} />;
 }

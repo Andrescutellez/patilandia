@@ -5,15 +5,19 @@ import { useEffect, useState } from "react";
 
 import { buttonStyles } from "@/components/ui/button";
 import { getMyPetProfiles, getStoredAccountEmail } from "@/lib/vendure/pets-client";
+import { useStore } from "@/store/store-provider";
 
 /** The one "próximamente" card in /cuenta that got upgraded to real data — see the Reseñas-style
- *  plugin at patilandia-vendure/src/plugins/patilandia-pets. No customer login exists, so "sesión"
- *  here just means "we remember your email in this browser", same trust level as the cart. */
+ *  plugin at patilandia-vendure/src/plugins/patilandia-pets. Prefers a real logged-in session's
+ *  email; falls back to "we remember your email in this browser" for a guest, same trust level as
+ *  the cart. */
 export function AccountPetsCard() {
+  const { activeCustomer, isAuthReady } = useStore();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    const email = getStoredAccountEmail();
+    if (!isAuthReady) return;
+    const email = activeCustomer?.emailAddress ?? getStoredAccountEmail();
     if (!email) {
       setCount(0);
       return;
@@ -21,7 +25,7 @@ export function AccountPetsCard() {
     getMyPetProfiles(email)
       .then((pets) => setCount(pets.length))
       .catch(() => setCount(0));
-  }, []);
+  }, [activeCustomer, isAuthReady]);
 
   return (
     <div className="rounded-[2rem] border border-white/60 bg-white/82 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">

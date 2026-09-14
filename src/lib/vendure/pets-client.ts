@@ -1,7 +1,6 @@
 "use client";
 
-const VENDURE_SHOP_API_URL =
-  process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL ?? "http://localhost:3000/shop-api";
+import { shopFetch } from "./shop-fetch";
 
 export const ACCOUNT_EMAIL_STORAGE_KEY = "patilandia-account-email";
 
@@ -27,13 +26,10 @@ export interface PetProfileInput {
   notes?: string;
 }
 
-class PetsApiError extends Error {}
-
 /**
- * No customer login exists on this storefront — pet profiles are identified by email alone, the
- * same trust level already used by the cart (see setCustomerEmail in shop-client.ts). Not real
- * security: anyone who knows an email can read/edit those pets. Documented as a known limitation
- * in Decisiones y Razonamiento — real customer auth would upgrade this transparently.
+ * Fallback identity for guests who never log in — a real Vendure session (see store-provider.tsx's
+ * activeCustomer) always takes priority server-side once shopFetch sends it, but this key still
+ * drives which UI path (EmailGate vs. real data) a guest sees before that check happens.
  */
 export function getStoredAccountEmail(): string | null {
   try {
@@ -49,24 +45,6 @@ export function storeAccountEmail(email: string) {
   } catch {
     // Worst case the user re-enters their email next visit — not fatal.
   }
-}
-
-async function shopFetch<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
-  const response = await fetch(VENDURE_SHOP_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, variables })
-  });
-
-  const payload = (await response.json()) as { data?: T; errors?: Array<{ message: string }> };
-
-  if (payload.errors?.length) {
-    throw new PetsApiError(payload.errors[0].message);
-  }
-  if (!payload.data) {
-    throw new PetsApiError("Vendure no devolvió datos.");
-  }
-  return payload.data;
 }
 
 const PET_FIELDS = `id name species breed birthDate sizeLabel notes`;

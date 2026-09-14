@@ -22,12 +22,39 @@ interface StoreContextValue {
   isCartReady: boolean;
   /** Message from the last failed cart/checkout operation, if any — shown by CartPage/CheckoutPage. */
   cartError: string | null;
+  /** Vendure's error code for cartError, when available (e.g. "EMAIL_ADDRESS_CONFLICT_ERROR") — lets
+   *  the UI show a specific message/action instead of the generic one. */
+  cartErrorCode: string | null;
+  /** activeCustomer's email when logged in, otherwise the guest email already attached to the live
+   *  order (or null before either exists). */
   customerEmail: string | null;
   orderId: string | null;
+  /** The real, logged-in Vendure customer — null for a guest. See login/register/logout below. */
+  activeCustomer: shop.ActiveCustomer | null;
+  /** True once the initial activeCustomer check has settled — avoids flashing a guest-only UI
+   *  (e.g. an EmailGate) before we actually know whether there's a session. */
+  isAuthReady: boolean;
+  isLoggedIn: boolean;
+  /** Message from the last failed login/register call, if any. */
+  authError: string | null;
+  /** Vendure's error code for authError, when available (e.g. "INVALID_CREDENTIALS_ERROR",
+   *  "NOT_VERIFIED_ERROR") — lets the UI show specific copy instead of the raw message. */
+  authErrorCode: string | null;
   /** Re-fetches the active order from Vendure and updates cart/totals — used after a Patipuntos
    *  redemption changes the order's surcharges/total outside of the usual cart mutations. */
   refreshOrder: () => Promise<void>;
-  addToCart: (product: StorefrontProduct, options?: { size?: ProductSize; color?: ProductColor }) => Promise<void>;
+  /** Re-fetches activeCustomer — used right after verifyCustomerAccount/resetPassword succeed on a
+   *  dedicated page (outside login/register), which mint a session without going through login(). */
+  refreshCustomer: () => Promise<void>;
+  addToCart: (
+    product: StorefrontProduct,
+    options?: {
+      size?: ProductSize;
+      color?: ProductColor;
+      /** Snapshotted straight onto the new OrderLine — see product-personalization.tsx. */
+      personalization?: Array<{ fieldId: string; label: string; value: string }>;
+    }
+  ) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeFromCart: (id: string) => Promise<void>;
   /** Keyed by StorefrontProduct.id, not slug — see the sync comment below for why. */
@@ -37,10 +64,21 @@ interface StoreContextValue {
   updateCustomerName: (email: string, fullName: string) => Promise<boolean>;
   setShippingAddress: (input: Parameters<typeof shop.setShippingAddress>[0]) => Promise<boolean>;
   setShippingMethod: (shippingMethodId: string) => Promise<boolean>;
+  /** Stores the "¿Es un regalo?" answers on the active order — see checkout-page.tsx. Only called
+   *  when the shopper actually toggles the gift option on; a normal checkout never calls this. */
+  setGiftDetails: (input: shop.GiftDetailsInput) => Promise<boolean>;
   /** Resolves with the completed order's summary on success, or null on failure. On success the
    *  live cart is reset to a fresh (empty) order, so the confirmation screen must hold on to the
    *  returned summary itself rather than reading it back from context afterwards. */
   placeOrder: (paymentMethodCode?: string) => Promise<shop.OrderSummary | null>;
+  login: (emailAddress: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  register: (input: shop.RegisterInput) => Promise<boolean>;
+  /** Lets the current page tell the global WhatsApp floating button (see whatsapp-floating-button.tsx)
+   *  what message to prefill instead of the generic default — e.g. a product page sets this on mount
+   *  and clears it (back to null) on unmount, so navigating away always restores the generic message. */
+  whatsappMessage: string | null;
+  setWhatsappMessage: (message: string | null) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -52,6 +90,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [order, setOrder] = useState<shop.OrderSummary | null>(null);
   const [isCartReady, setIsCartReady] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState<string | null>(null);
+  const [cartErrorCode, setCartErrorCode] = useState<string | null>(null);
+  const [activeCustomer, setActiveCustomer] = useState<shop.ActiveCustomer | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null);
 
   useEffect(() => {
     let localWishlist: string[] = [];
@@ -65,19 +109,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.removeItem(WISHLIST_STORAGE_KEY);
     }
 
-    // If we already know this visitor's email (from a previous checkout or from the Mascotas
-    // email gate), push the local wishlist up to Vendure and adopt the merged result as source of
-    // truth. Without a known email the wishlist just stays local, exactly like before this feature
-    // existed — see the "Local + sync perezoso" decision in Decisiones y Razonamiento.
-    const knownEmail = getStoredAccountEmail();
-    if (knownEmail) {
-      wishlistApi
-        .syncWishlist(knownEmail, localWishlist)
-        .then((merged) => setWishlist(merged))
-        .catch(() => {
-          // Vendure unreachable — keep working off the local list.
-        });
-    }
+    // Check for a real logged-in session first, since a registered customer's email always takes
+    // priority over the informal "account email" key below — only once we know whether one exists
+    // do we decide which email (if any) to sync the local wishlist against.
+    shop
+      .getActiveCustomer()
+      .then((customer) => {
+        setActiveCustomer(customer);
+        return customer;
+      })
+      .catch(() => null)
+      .then((customer) => {
+        setIsAuthReady(true);
+
+        // If we already know this visitor's email (a real session, a previous checkout, or the
+        // Mascotas email gate), push the local wishlist up to Vendure and adopt the merged result
+        // as source of truth. Without a known email the wishlist just stays local, exactly like
+        // before this feature existed — see the "Local + sync perezoso" decision in Decisiones y
+        // Razonamiento.
+        const knownEmail = customer?.emailAddress ?? getStoredAccountEmail();
+        if (knownEmail) {
+          wishlistApi
+            .syncWishlist(knownEmail, localWishlist)
+            .then((merged) => setWishlist(merged))
+            .catch(() => {
+              // Vendure unreachable — keep working off the local list.
+            });
+        }
+      });
 
     shop
       .getActiveOrder()
@@ -97,11 +156,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const runOrderOperation = useCallback(async (operation: () => Promise<shop.OrderSummary>) => {
     try {
       setCartError(null);
+      setCartErrorCode(null);
       const nextOrder = await operation();
       setOrder(nextOrder);
       return true;
     } catch (error) {
       setCartError(error instanceof Error ? error.message : "No pudimos actualizar tu carrito.");
+      setCartErrorCode(error instanceof shop.ShopOperationError ? (error.errorCode ?? null) : null);
       return false;
     }
   }, []);
@@ -120,14 +181,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       wishlistCount: wishlist.length,
       isCartReady,
       cartError,
-      customerEmail: order?.customerEmail ?? null,
+      cartErrorCode,
+      customerEmail: activeCustomer?.emailAddress ?? order?.customerEmail ?? null,
       orderId: order?.id ?? null,
+      activeCustomer,
+      isAuthReady,
+      isLoggedIn: activeCustomer !== null,
+      authError,
+      authErrorCode,
       refreshOrder: async () => {
         try {
           const fresh = await shop.getActiveOrder();
           setOrder(fresh);
         } catch {
           // Leave the current order state as-is — a stale total is preferable to blanking the cart.
+        }
+      },
+      refreshCustomer: async () => {
+        try {
+          const customer = await shop.getActiveCustomer();
+          setActiveCustomer(customer);
+        } catch {
+          // Leave the current auth state as-is.
         }
       },
 
@@ -143,7 +218,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        await runOrderOperation(() => shop.addItemToOrder(variantId, 1));
+        const customFields = options?.personalization?.length
+          ? { personalizationValues: JSON.stringify(options.personalization) }
+          : undefined;
+        await runOrderOperation(() => shop.addItemToOrder(variantId, 1, customFields));
       },
 
       updateQuantity: async (id, quantity) => {
@@ -170,7 +248,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Optimistic + fire-and-forget: the heart icon must stay instant everywhere in the
         // catalog, so we never await this. Without a known email yet there's nothing to sync —
         // the local list above is already the full source of truth in that case.
-        const knownEmail = getStoredAccountEmail();
+        const knownEmail = activeCustomer?.emailAddress ?? getStoredAccountEmail();
         if (knownEmail) {
           const request = isAdding
             ? wishlistApi.addToWishlist(knownEmail, productId)
@@ -206,6 +284,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateCustomerName: (email, fullName) => runOrderOperation(() => shop.updateCustomerName(email, fullName)),
       setShippingAddress: (input) => runOrderOperation(() => shop.setShippingAddress(input)),
       setShippingMethod: (shippingMethodId) => runOrderOperation(() => shop.setShippingMethod(shippingMethodId)),
+      setGiftDetails: (input) => runOrderOperation(() => shop.setOrderCustomFields(input)),
       placeOrder: async (paymentMethodCode) => {
         try {
           setCartError(null);
@@ -221,9 +300,71 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setCartError(error instanceof Error ? error.message : "No pudimos confirmar tu pedido.");
           return null;
         }
-      }
+      },
+
+      login: async (emailAddress, password) => {
+        try {
+          setAuthError(null);
+          setAuthErrorCode(null);
+          const customer = await shop.login(emailAddress, password);
+          setActiveCustomer(customer);
+          // Vendure merges an anonymous session's order into the logged-in customer's order on
+          // login — refresh so the cart reflects that instead of the stale pre-login snapshot.
+          shop
+            .getActiveOrder()
+            .then(setOrder)
+            .catch(() => {
+              // Leave the current order state as-is.
+            });
+          return true;
+        } catch (error) {
+          setAuthError(error instanceof Error ? error.message : "No pudimos iniciar sesión.");
+          setAuthErrorCode(error instanceof shop.ShopOperationError ? (error.errorCode ?? null) : null);
+          return false;
+        }
+      },
+
+      logout: async () => {
+        try {
+          await shop.logout();
+        } finally {
+          setActiveCustomer(null);
+          shop
+            .getActiveOrder()
+            .then(setOrder)
+            .catch(() => setOrder(null));
+        }
+      },
+
+      register: async (input) => {
+        try {
+          setAuthError(null);
+          setAuthErrorCode(null);
+          await shop.registerCustomerAccount(input);
+          return true;
+        } catch (error) {
+          setAuthError(error instanceof Error ? error.message : "No pudimos crear tu cuenta.");
+          setAuthErrorCode(error instanceof shop.ShopOperationError ? (error.errorCode ?? null) : null);
+          return false;
+        }
+      },
+
+      whatsappMessage,
+      setWhatsappMessage
     };
-  }, [cartError, isCartReady, order, runOrderOperation, wishlist]);
+  }, [
+    activeCustomer,
+    authError,
+    authErrorCode,
+    cartError,
+    whatsappMessage,
+    cartErrorCode,
+    isAuthReady,
+    isCartReady,
+    order,
+    runOrderOperation,
+    wishlist
+  ]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
