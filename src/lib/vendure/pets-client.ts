@@ -21,7 +21,7 @@ export interface PetProfileInput {
   name: string;
   species: PetSpecies;
   breed?: string;
-  birthDate?: string;
+  birthDate?: string | null;
   sizeLabel?: PetSize;
   notes?: string;
 }

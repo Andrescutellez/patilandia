@@ -88,7 +88,13 @@ function PetForm({
     setSaving(true);
     setError("");
     try {
-      await onSave(form);
+      await onSave({
+        ...form,
+        // The date input gives a bare "YYYY-MM-DD" string, but the API's birthDate field is a
+        // DateTime and rejects anything without a time component. Send null (not undefined) when
+        // empty so clearing an existing birthDate on an edit actually clears it server-side.
+        birthDate: form.birthDate ? new Date(form.birthDate).toISOString() : null
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar la mascota.");
     } finally {
@@ -147,7 +153,7 @@ function PetForm({
           className="rounded-[0.9rem] border border-[var(--line)] px-4 py-2.5 text-sm"
           onChange={(event) => setForm((f) => ({ ...f, birthDate: event.target.value }))}
           type="date"
-          value={form.birthDate}
+          value={form.birthDate ?? ""}
         />
       </div>
 
