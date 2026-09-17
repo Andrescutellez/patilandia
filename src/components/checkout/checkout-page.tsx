@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BoldPaymentButton } from "@/components/checkout/bold-payment-button";
 import { buttonStyles } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/ui/icons";
+import { generateBoldCheckout, type BoldCheckoutData } from "@/lib/vendure/bold-client";
 import {
   CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
   getEligibleShippingMethods,
@@ -101,9 +103,11 @@ export function CheckoutPage() {
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderSummary | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"standard-payment" | typeof CASH_ON_DELIVERY_PAYMENT_METHOD_CODE>(
-    "standard-payment"
-  );
+  const [paymentMethod, setPaymentMethod] = useState<"bold" | typeof CASH_ON_DELIVERY_PAYMENT_METHOD_CODE>("bold");
+  // Only set once generateBoldCheckout() succeeds — its presence is what switches the "bold"
+  // path from a plain submit button to Bold's own widget (see the render below).
+  const [boldCheckout, setBoldCheckout] = useState<BoldCheckoutData | null>(null);
+  const [boldError, setBoldError] = useState<string | null>(null);
 
   const [loyaltyAccount, setLoyaltyAccount] = useState<LoyaltyAccount | null>(null);
   const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
@@ -316,6 +320,22 @@ export function CheckoutPage() {
         } catch (err) {
           setRedeemError(err instanceof Error ? err.message : "No pudimos aplicar tus Patipuntos a este pedido.");
         }
+      }
+
+      // Bold never goes through placeOrder()/addPaymentToOrder — the shopper still has to leave
+      // to Bold's own hosted page and actually pay, so the order stays in ArrangingPayment until
+      // the webhook or the confirmation page's active poll settles it (see bold.service.ts on the
+      // backend and confirmacion-bold/page.tsx here). This request only prepares that: it's what
+      // generates the button the shopper still has to click.
+      if (paymentMethod === "bold") {
+        setBoldError(null);
+        try {
+          const checkout = await generateBoldCheckout();
+          setBoldCheckout(checkout);
+        } catch (err) {
+          setBoldError(err instanceof Error ? err.message : "No pudimos preparar el pago con Bold.");
+        }
+        return;
       }
 
       const finishedOrder = await placeOrder(paymentMethod);
@@ -547,14 +567,10 @@ export function CheckoutPage() {
 
           <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
             <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Método de pago</h2>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-              Wompi y Mercado Pago llegan en una fase posterior. Por ahora, confirmar el pedido lo deja
-              autorizado y listo para que el equipo lo procese desde el panel.
-            </p>
             <div className="mt-5 grid gap-3">
               {(
                 [
-                  ["standard-payment", "Pago en línea", "Se autoriza al confirmar el pedido."],
+                  ["bold", "Bold (tarjeta, PSE, Nequi)", "Te lleva a la pasarela de Bold para completar el pago."],
                   [
                     CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
                     "Pago contraentrega",
@@ -572,7 +588,11 @@ export function CheckoutPage() {
                     checked={paymentMethod === value}
                     className="mt-1"
                     name="paymentMethod"
-                    onChange={() => setPaymentMethod(value)}
+                    onChange={() => {
+                      setPaymentMethod(value);
+                      setBoldCheckout(null);
+                      setBoldError(null);
+                    }}
                     type="radio"
                   />
                   <span>
@@ -582,6 +602,7 @@ export function CheckoutPage() {
                 </label>
               ))}
             </div>
+            {boldError ? <p className="mt-4 text-sm font-semibold text-red-500">{boldError}</p> : null}
           </div>
         </section>
 
@@ -657,9 +678,19 @@ export function CheckoutPage() {
             </div>
           </div>
 
-          <button className={buttonStyles({ size: "lg", className: "mt-8 w-full" })} disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Procesando..." : "Confirmar pedido"}
-          </button>
+          {paymentMethod === "bold" && boldCheckout ? (
+            <div className="mt-8">
+              <BoldPaymentButton checkout={boldCheckout} />
+            </div>
+          ) : (
+            <button className={buttonStyles({ size: "lg", className: "mt-8 w-full" })} disabled={isSubmitting} type="submit">
+              {isSubmitting
+                ? "Procesando..."
+                : paymentMethod === "bold"
+                  ? "Continuar con Bold"
+                  : "Confirmar pedido"}
+            </button>
+          )}
           <Link className={buttonStyles({ variant: "ghost", className: "mt-4 w-full" })} href="/carrito">
             Volver al carrito
           </Link>
