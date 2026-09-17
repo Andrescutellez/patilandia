@@ -24,7 +24,15 @@ const sizeLabels: Record<Exclude<PetSize, "">, string> = {
   grande: "Grande"
 };
 
-const emptyForm: PetProfileInput = { name: "", species: "dog", breed: "", birthDate: "", sizeLabel: "", notes: "" };
+const emptyForm: PetProfileInput = {
+  name: "",
+  species: "dog",
+  breed: "",
+  ownerName: "",
+  birthDate: "",
+  sizeLabel: "",
+  notes: ""
+};
 
 function EmailGate({ onSubmit }: { onSubmit: (email: string) => void }) {
   const [email, setEmail] = useState("");
@@ -74,6 +82,7 @@ function PetForm({
           name: initial.name,
           species: initial.species,
           breed: initial.breed,
+          ownerName: initial.ownerName,
           birthDate: initial.birthDate?.slice(0, 10) ?? "",
           sizeLabel: initial.sizeLabel,
           notes: initial.notes
@@ -128,6 +137,14 @@ function PetForm({
           ))}
         </select>
       </div>
+
+      <input
+        className="w-full rounded-[0.9rem] border border-[var(--line)] px-4 py-2.5 text-sm"
+        onChange={(event) => setForm((f) => ({ ...f, ownerName: event.target.value }))}
+        placeholder="Nombre del dueño (opcional)"
+        type="text"
+        value={form.ownerName ?? ""}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <input

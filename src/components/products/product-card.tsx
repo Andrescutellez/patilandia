@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CartIcon, HeartIcon } from "@/components/ui/icons";
@@ -22,6 +23,8 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
   const { addToCart, isWishlisted, toggleWishlist } = useStore();
   const discount = percentageOff(product.price, product.compareAtPrice);
   const wishlisted = isWishlisted(product.id);
+  const [addError, setAddError] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   return (
     <article className="group overflow-hidden rounded-[1.8rem] border border-white/60 bg-white shadow-[0_20px_50px_rgba(33,38,84,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(33,38,84,0.14)]">
@@ -99,7 +102,14 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
 
         <Button
           className="w-full"
-          onClick={() => addToCart(product, { size: product.sizes[0], color: product.colors[0] })}
+          disabled={isAdding}
+          onClick={async () => {
+            setIsAdding(true);
+            setAddError(false);
+            const ok = await addToCart(product, { size: product.sizes[0], color: product.colors[0] });
+            setIsAdding(false);
+            if (!ok) setAddError(true);
+          }}
           size="sm"
           type="button"
         >
@@ -107,6 +117,9 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
           <span className="hidden sm:inline">Agregar al carrito</span>
           <span className="sm:hidden">Agregar</span>
         </Button>
+        {addError ? (
+          <p className="text-center text-xs font-semibold text-red-500">No pudimos agregarlo. Intentá de nuevo.</p>
+        ) : null}
       </div>
     </article>
   );

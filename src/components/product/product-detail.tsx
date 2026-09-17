@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -45,12 +46,34 @@ export function ProductDetail({
   whatsappSettings: WhatsappSettings | null;
 }) {
   const { addToCart, isLoggedIn, isWishlisted, toggleWishlist, setWhatsappMessage } = useStore();
+  const router = useRouter();
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<ProductSize>(product.sizes[1] ?? product.sizes[0]);
   const [quantity, setQuantity] = useState(1);
   const [personalizationAnswers, setPersonalizationAnswers] = useState<PersonalizationAnswerDraft[]>([]);
   const [personalizationValid, setPersonalizationValid] = useState(!personalizationConfig);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
   const discount = percentageOff(product.price, product.compareAtPrice);
+
+  async function handleAddToCart(navigateToCheckout: boolean) {
+    setIsAdding(true);
+    setAddError(null);
+    const ok = await addToCart(product, {
+      size: selectedSize,
+      color: selectedColor,
+      personalization: personalizationAnswers.length ? personalizationAnswers : undefined,
+      quantity
+    });
+    setIsAdding(false);
+    if (!ok) {
+      setAddError("No pudimos agregarlo al carrito. Intentá de nuevo en un momento.");
+      return;
+    }
+    if (navigateToCheckout) {
+      router.push("/checkout");
+    }
+  }
 
   // Feeds the global WhatsApp floating button (see whatsapp-floating-button.tsx) a message specific
   // to this product while it's on screen, restoring the generic default the moment the shopper
@@ -153,16 +176,8 @@ export function ProductDetail({
             <QuantitySelector className="w-fit" onChange={setQuantity} value={quantity} />
             <Button
               className="flex-1"
-              disabled={Boolean(personalizationConfig) && !personalizationValid}
-              onClick={() => {
-                for (let index = 0; index < quantity; index += 1) {
-                  addToCart(product, {
-                    size: selectedSize,
-                    color: selectedColor,
-                    personalization: personalizationAnswers.length ? personalizationAnswers : undefined
-                  });
-                }
-              }}
+              disabled={isAdding || (Boolean(personalizationConfig) && !personalizationValid)}
+              onClick={() => handleAddToCart(false)}
               size="lg"
               type="button"
             >
@@ -170,9 +185,18 @@ export function ProductDetail({
             </Button>
           </div>
 
-          <Link className={buttonStyles({ variant: "secondary", size: "lg", className: "w-full" })} href="/checkout">
+          <Button
+            className="w-full"
+            disabled={isAdding || (Boolean(personalizationConfig) && !personalizationValid)}
+            onClick={() => handleAddToCart(true)}
+            size="lg"
+            type="button"
+            variant="secondary"
+          >
             Comprar ahora
-          </Link>
+          </Button>
+
+          {addError ? <p className="text-sm font-semibold text-red-500">{addError}</p> : null}
 
           {whatsappSettings ? (
             <button

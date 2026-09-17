@@ -12,6 +12,7 @@ export interface PetProfile {
   name: string;
   species: PetSpecies;
   breed: string;
+  ownerName: string;
   birthDate: string | null;
   sizeLabel: PetSize;
   notes: string;
@@ -21,6 +22,7 @@ export interface PetProfileInput {
   name: string;
   species: PetSpecies;
   breed?: string;
+  ownerName?: string;
   birthDate?: string | null;
   sizeLabel?: PetSize;
   notes?: string;
@@ -47,7 +49,7 @@ export function storeAccountEmail(email: string) {
   }
 }
 
-const PET_FIELDS = `id name species breed birthDate sizeLabel notes`;
+const PET_FIELDS = `id name species breed ownerName birthDate sizeLabel notes`;
 
 export async function getMyPetProfiles(email: string): Promise<PetProfile[]> {
   const data = await shopFetch<{ myPetProfiles: PetProfile[] }>(

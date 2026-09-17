@@ -46,6 +46,9 @@ interface StoreContextValue {
   /** Re-fetches activeCustomer — used right after verifyCustomerAccount/resetPassword succeed on a
    *  dedicated page (outside login/register), which mint a session without going through login(). */
   refreshCustomer: () => Promise<void>;
+  /** Resolves false (and sets cartError) on failure — callers that need to know whether the add
+   *  actually landed (e.g. showing an inline error, or only navigating to checkout on success)
+   *  must check the return value instead of assuming a resolved promise means success. */
   addToCart: (
     product: StorefrontProduct,
     options?: {
@@ -53,8 +56,9 @@ interface StoreContextValue {
       color?: ProductColor;
       /** Snapshotted straight onto the new OrderLine — see product-personalization.tsx. */
       personalization?: Array<{ fieldId: string; label: string; value: string }>;
+      quantity?: number;
     }
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeFromCart: (id: string) => Promise<void>;
   /** Keyed by StorefrontProduct.id, not slug — see the sync comment below for why. */
@@ -215,13 +219,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         if (!variantId) {
           setCartError("Este producto no está disponible para agregar al carrito en este momento.");
-          return;
+          setCartErrorCode(null);
+          return false;
         }
 
         const customFields = options?.personalization?.length
           ? { personalizationValues: JSON.stringify(options.personalization) }
           : undefined;
-        await runOrderOperation(() => shop.addItemToOrder(variantId, 1, customFields));
+        return runOrderOperation(() => shop.addItemToOrder(variantId, options?.quantity ?? 1, customFields));
       },
 
       updateQuantity: async (id, quantity) => {
