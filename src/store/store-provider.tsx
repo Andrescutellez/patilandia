@@ -177,6 +177,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /** A payment attempt that never finished (Bold declined, the shopper closed the tab mid-payment,
+   *  etc.) leaves the order sitting in ArrangingPayment — every mutation below this point only
+   *  works in AddingItems, so both addToCart and the checkout form call this first. Safe to run
+   *  unconditionally: browsing/adding to cart is never something a shopper does while a real
+   *  payment for THIS order is in flight in another tab, so there's no live payment to disrupt. */
+  const ensureAddingItems = useCallback(async () => {
+    if (order?.state !== "ArrangingPayment") return true;
+    return runOrderOperation(() => shop.transitionOrderToState("AddingItems"));
+  }, [order, runOrderOperation]);
+
   const value = useMemo<StoreContextValue>(() => {
     const cart = order?.lines ?? [];
 
@@ -195,10 +205,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       customerEmail: activeCustomer?.emailAddress ?? order?.customerEmail ?? null,
       orderId: order?.id ?? null,
       orderState: order?.state ?? null,
-      ensureAddingItems: async () => {
-        if (order?.state !== "ArrangingPayment") return true;
-        return runOrderOperation(() => shop.transitionOrderToState("AddingItems"));
-      },
+      ensureAddingItems,
       activeCustomer,
       isAuthReady,
       isLoggedIn: activeCustomer !== null,
@@ -237,6 +244,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const customFields = options?.personalization?.length
           ? { personalizationValues: JSON.stringify(options.personalization) }
           : undefined;
+        await ensureAddingItems();
         return runOrderOperation(() => shop.addItemToOrder(variantId, options?.quantity ?? 1, customFields));
       },
 
@@ -375,6 +383,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     cartError,
     whatsappMessage,
     cartErrorCode,
+    ensureAddingItems,
     isAuthReady,
     isCartReady,
     order,
