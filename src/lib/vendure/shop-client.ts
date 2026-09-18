@@ -339,17 +339,21 @@ export async function setShippingMethod(shippingMethodId: string): Promise<Order
   return unwrapOrderResult(data.setOrderShippingMethod);
 }
 
-export async function placeOrder(paymentMethodCode: string = DEFAULT_PAYMENT_METHOD_CODE): Promise<OrderSummary> {
-  const transition = await shopFetch<{ transitionOrderToState: RawOrder | null }>(
+export async function transitionOrderToState(state: string): Promise<OrderSummary> {
+  const data = await shopFetch<{ transitionOrderToState: RawOrder | null }>(
     `mutation TransitionOrderToState($state: String!) {
       transitionOrderToState(state: $state) { ${ORDER_RESULT_FIELDS} }
     }`,
-    { state: "ArrangingPayment" }
+    { state }
   );
-  if (!transition.transitionOrderToState) {
-    throw new ShopOperationError("No se pudo pasar la orden a estado de pago.");
+  if (!data.transitionOrderToState) {
+    throw new ShopOperationError("No se pudo cambiar el estado de la orden.");
   }
-  unwrapOrderResult(transition.transitionOrderToState);
+  return unwrapOrderResult(data.transitionOrderToState);
+}
+
+export async function placeOrder(paymentMethodCode: string = DEFAULT_PAYMENT_METHOD_CODE): Promise<OrderSummary> {
+  await transitionOrderToState("ArrangingPayment");
 
   const payment = await shopFetch<{ addPaymentToOrder: RawOrder }>(
     `mutation AddPaymentToOrder($input: PaymentInput!) {

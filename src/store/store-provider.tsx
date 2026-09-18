@@ -29,6 +29,12 @@ interface StoreContextValue {
    *  order (or null before either exists). */
   customerEmail: string | null;
   orderId: string | null;
+  orderState: string | null;
+  /** A previous Bold attempt (or any other failed/abandoned payment attempt) can leave the order
+   *  stuck in ArrangingPayment across a page reload — setShippingAddress/setShippingMethod only
+   *  work in AddingItems, so a retry would otherwise fail with "Order contents may only be
+   *  modified when in the 'AddingItems' state". No-ops (resolves true) if already AddingItems. */
+  ensureAddingItems: () => Promise<boolean>;
   /** The real, logged-in Vendure customer — null for a guest. See login/register/logout below. */
   activeCustomer: shop.ActiveCustomer | null;
   /** True once the initial activeCustomer check has settled — avoids flashing a guest-only UI
@@ -188,6 +194,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       cartErrorCode,
       customerEmail: activeCustomer?.emailAddress ?? order?.customerEmail ?? null,
       orderId: order?.id ?? null,
+      orderState: order?.state ?? null,
+      ensureAddingItems: async () => {
+        if (order?.state !== "ArrangingPayment") return true;
+        return runOrderOperation(() => shop.transitionOrderToState("AddingItems"));
+      },
       activeCustomer,
       isAuthReady,
       isLoggedIn: activeCustomer !== null,

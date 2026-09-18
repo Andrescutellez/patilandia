@@ -77,6 +77,7 @@ export function CheckoutPage() {
     customerEmail,
     orderId,
     refreshOrder,
+    ensureAddingItems,
     setCustomerEmail,
     updateCustomerName,
     setShippingAddress,
@@ -257,6 +258,13 @@ export function CheckoutPage() {
     setRedeemError(null);
 
     try {
+      // A previous attempt (Bold declining the card, the shopper backing out mid-payment, etc.)
+      // can leave the order sitting in ArrangingPayment from an earlier submit — the mutations
+      // below only work in AddingItems, so this must run before them on every submit, not just
+      // the first one.
+      const ready = await ensureAddingItems();
+      if (!ready) return;
+
       let confirmedEmail = customerEmail;
       if (!confirmedEmail) {
         const ok = await setCustomerEmail(email);
