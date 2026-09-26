@@ -9,7 +9,7 @@ import { CategoryIcon } from "@/components/ui/icons";
  *  grids that each went full-size on a phone. */
 export function CategoryStrip({
   activeSlug,
-  className = "mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
+  className = "mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-6 lg:px-8"
 }: {
   /** Highlights the current category — used by CatalogView on a category page. */
   activeSlug?: string;

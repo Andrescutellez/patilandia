@@ -24,7 +24,7 @@ const PET_TYPE_CARDS = [
 
 export function PetTypeCards() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-12 lg:px-8">
       <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
         {PET_TYPE_CARDS.map((card) => (
           <Link
