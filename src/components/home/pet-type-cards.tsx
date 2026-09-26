@@ -1,6 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { FadeIn } from "@/components/ui/fade-in";
+import { SectionHeading } from "@/components/ui/section-heading";
+
 /**
  * Real catalog filter entry points, not decoration — each links to /tienda?mascota=<code>, which
  * CatalogView reads on mount to pre-select its existing "Tipo de mascota" filter (same mechanism
@@ -24,18 +27,25 @@ const PET_TYPE_CARDS = [
 
 export function PetTypeCards() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
-        {PET_TYPE_CARDS.map((card) => (
-          <Link
-            key={card.petType}
-            className="relative block aspect-[1774/887] overflow-hidden rounded-[2rem] shadow-[0_18px_45px_rgba(31,36,84,0.1)] transition hover:scale-[1.01]"
-            href={card.href}
-          >
-            <Image alt={card.alt} className="object-cover" fill sizes="(max-width: 640px) 100vw, 50vw" src={card.src} />
-          </Link>
-        ))}
-      </div>
+    <section className="mx-auto max-w-7xl space-y-6 px-4 pt-12 sm:px-6 lg:px-8">
+      <FadeIn className="space-y-6">
+        <SectionHeading
+          eyebrow="Compra por mascota"
+          title="¿Para tu perro o para tu gato?"
+          titleFont="marker"
+        />
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+          {PET_TYPE_CARDS.map((card) => (
+            <Link
+              key={card.petType}
+              className="relative block aspect-[1774/887] overflow-hidden rounded-[2rem] shadow-[0_18px_45px_rgba(31,36,84,0.1)] transition hover:scale-[1.01]"
+              href={card.href}
+            >
+              <Image alt={card.alt} className="object-cover" fill sizes="(max-width: 640px) 100vw, 50vw" src={card.src} />
+            </Link>
+          ))}
+        </div>
+      </FadeIn>
     </section>
   );
 }
