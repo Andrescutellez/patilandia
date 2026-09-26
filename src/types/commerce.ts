@@ -3,7 +3,9 @@ export type StoreCurrency = "COP";
 export type ProductSize = "S" | "M" | "L" | "XL";
 export type ShippingClass = "standard" | "bulky" | "heavy" | "custom";
 export type CollectionTheme = "royal" | "galaxy" | "magic" | "safari" | "dreams";
-export type PetType = "dogs" | "cats" | "all";
+/** Extend here (and in adapters.ts's PET_TYPES) when Patilandia adds aves/roedores/peces/otros —
+ *  the Vendure side just needs the matching FacetValue added under the `pet-type` Facet. */
+export type PetType = "dogs" | "cats";
 
 export interface Category {
   slug: string;
@@ -50,7 +52,11 @@ export interface StorefrontProduct {
   categorySlug: string;
   categoryLabel: string;
   collectionSlug: string;
-  petType: PetType;
+  /** Which pet(s) this product is for — codes of every `pet-type` FacetValue assigned to it in
+   *  Vendure. Empty means "not tagged": it shows under every pet-type filter, and under any future
+   *  species added later, rather than disappearing from navigation. A product can carry more than
+   *  one (e.g. a universal toy → ["dogs", "cats"]) since Vendure facets are many-to-many. */
+  petTypes: PetType[];
   shortDescription: string;
   description: string;
   image: string;

@@ -97,7 +97,8 @@ const COMPLEMENTARY_CATEGORIES: Record<string, string[]> = {
 };
 
 function petTypeCompatible(a: StorefrontProduct, b: StorefrontProduct): boolean {
-  return a.petType === "all" || b.petType === "all" || a.petType === b.petType;
+  if (a.petTypes.length === 0 || b.petTypes.length === 0) return true;
+  return a.petTypes.some((petType) => b.petTypes.includes(petType));
 }
 
 function byThemeThenRating(product: StorefrontProduct) {

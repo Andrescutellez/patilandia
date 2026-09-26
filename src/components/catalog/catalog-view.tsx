@@ -32,11 +32,14 @@ export function CatalogView({
 }) {
   const searchParams = useSearchParams();
   const queryFromUrl = searchParams.get("buscar") ?? "";
+  const petTypeFromUrl = searchParams.get("mascota") ?? "";
 
   const [search, setSearch] = useState(queryFromUrl);
   const [sortMode, setSortMode] = useState<SortMode>("featured");
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedPetTypes, setSelectedPetTypes] = useState<string[]>([]);
+  const [selectedPetTypes, setSelectedPetTypes] = useState<string[]>(
+    petTypeFromUrl ? [petTypeFromUrl] : []
+  );
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
@@ -46,6 +49,12 @@ export function CatalogView({
   useEffect(() => {
     setSearch(queryFromUrl);
   }, [queryFromUrl]);
+
+  useEffect(() => {
+    if (petTypeFromUrl) {
+      setSelectedPetTypes([petTypeFromUrl]);
+    }
+  }, [petTypeFromUrl]);
 
   const priceBounds = useMemo(() => {
     if (products.length === 0) {
@@ -76,8 +85,10 @@ export function CatalogView({
     }
 
     if (selectedPetTypes.length > 0) {
-      nextProducts = nextProducts.filter((product) =>
-        selectedPetTypes.includes(product.petType) || product.petType === "all"
+      nextProducts = nextProducts.filter(
+        (product) =>
+          product.petTypes.length === 0 ||
+          product.petTypes.some((petType) => selectedPetTypes.includes(petType))
       );
     }
 

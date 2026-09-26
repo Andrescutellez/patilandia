@@ -144,7 +144,7 @@ function createProduct(
     categorySlug: "camitas",
     categoryLabel: "Camitas",
     collectionSlug: "dreams",
-    petType: "all",
+    petTypes: [],
     shortDescription: "Textiles premium diseñados para dormir bonito y vivir mejor.",
     description:
       "Una pieza textil pensada para convertir cualquier rincón en un refugio cómodo, mágico y duradero para tu mascota.",
@@ -220,7 +220,7 @@ export const products: StorefrontProduct[] = [
     rating: 4.8,
     badge: "Nuevo",
     theme: "galaxy",
-    petType: "cats",
+    petTypes: ["cats"],
     shortDescription: "Una nave mullida para gatos curiosos y siestas espaciales.",
     description:
       "Un diseño envolvente con estética cósmica y costuras luminosas para gatos que aman observar, estirarse y descansar con estilo.",

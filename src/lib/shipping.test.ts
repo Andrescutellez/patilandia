@@ -12,7 +12,7 @@ function buildProduct(overrides: Partial<StorefrontProduct> = {}): StorefrontPro
     categorySlug: "camitas",
     categoryLabel: "Camitas",
     collectionSlug: "dreams",
-    petType: "all",
+    petTypes: [],
     shortDescription: "",
     description: "",
     image: "/images/patilandia/hero-fantasy.png",

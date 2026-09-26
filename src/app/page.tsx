@@ -4,6 +4,7 @@ import { benefits } from "@/data/mock-store";
 import { CategoryStrip } from "@/components/home/category-strip";
 import { CollectionCard } from "@/components/home/collection-card";
 import { HomeHero } from "@/components/home/home-hero";
+import { PetTypeCards } from "@/components/home/pet-type-cards";
 import { ProductCard } from "@/components/products/product-card";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/ui/fade-in";
@@ -20,6 +21,7 @@ export default async function HomePage() {
     <div className="pb-12">
       <HomeHero />
       <CategoryStrip />
+      <PetTypeCards />
 
       <section className="mx-auto max-w-7xl space-y-6 px-4 pt-12 sm:px-6 lg:px-8">
         <FadeIn className="space-y-6">

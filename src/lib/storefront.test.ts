@@ -11,7 +11,7 @@ function buildProduct(overrides: Partial<StorefrontProduct> & Pick<StorefrontPro
     categorySlug: "camitas",
     categoryLabel: "Camitas",
     collectionSlug: "dreams",
-    petType: "all",
+    petTypes: [],
     shortDescription: "",
     description: "",
     image: "/img.png",
@@ -61,11 +61,11 @@ describe("rankRelatedProducts", () => {
   it("cross-sells complementary categories instead of only suggesting more of the same", () => {
     // Exactly the scenario a real shopper cares about: buying a bed shouldn't only surface other
     // beds — food/hygiene products for the same pet are a real, useful suggestion too.
-    const camita = buildProduct({ slug: "camita", categorySlug: "camitas", petType: "cats" });
-    const otraCamita = buildProduct({ slug: "otra-camita", categorySlug: "camitas", petType: "cats", rating: 3 });
-    const snack = buildProduct({ slug: "snack-gato", categorySlug: "alimentos", petType: "cats", rating: 5 });
-    const arena = buildProduct({ slug: "arena-gato", categorySlug: "higiene", petType: "cats", rating: 4 });
-    const juguetePerro = buildProduct({ slug: "juguete-perro", categorySlug: "juguetes", petType: "dogs" });
+    const camita = buildProduct({ slug: "camita", categorySlug: "camitas", petTypes: ["cats"] });
+    const otraCamita = buildProduct({ slug: "otra-camita", categorySlug: "camitas", petTypes: ["cats"], rating: 3 });
+    const snack = buildProduct({ slug: "snack-gato", categorySlug: "alimentos", petTypes: ["cats"], rating: 5 });
+    const arena = buildProduct({ slug: "arena-gato", categorySlug: "higiene", petTypes: ["cats"], rating: 4 });
+    const juguetePerro = buildProduct({ slug: "juguete-perro", categorySlug: "juguetes", petTypes: ["dogs"] });
 
     const results = rankRelatedProducts(camita, [otraCamita, snack, arena, juguetePerro], 3);
 
@@ -89,9 +89,9 @@ describe("rankRelatedProducts", () => {
   });
 
   it("never suggests an incompatible pet type, even as backfill", () => {
-    const forCats = buildProduct({ slug: "current", categorySlug: "ropa", petType: "cats" });
-    const forDogs = buildProduct({ slug: "for-dogs", categorySlug: "transporte", petType: "dogs" });
-    const forCatsToo = buildProduct({ slug: "for-cats-too", categorySlug: "juguetes", petType: "cats" });
+    const forCats = buildProduct({ slug: "current", categorySlug: "ropa", petTypes: ["cats"] });
+    const forDogs = buildProduct({ slug: "for-dogs", categorySlug: "transporte", petTypes: ["dogs"] });
+    const forCatsToo = buildProduct({ slug: "for-cats-too", categorySlug: "juguetes", petTypes: ["cats"] });
 
     const results = rankRelatedProducts(forCats, [forDogs, forCatsToo], 4);
 

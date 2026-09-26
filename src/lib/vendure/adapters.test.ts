@@ -77,12 +77,12 @@ describe("adaptVendureProduct", () => {
     expect(product.theme).toBe("royal");
   });
 
-  it("defaults petType to 'all' when there is no pet-type facet value", () => {
+  it("defaults petTypes to an empty array when there is no pet-type facet value", () => {
     const product = adaptVendureProduct(buildProduct());
-    expect(product.petType).toBe("all");
+    expect(product.petTypes).toEqual([]);
   });
 
-  it("reads petType when a pet-type facet value is present", () => {
+  it("reads petTypes when pet-type facet values are present", () => {
     const product = adaptVendureProduct(
       buildProduct({
         facetValues: [
@@ -92,7 +92,20 @@ describe("adaptVendureProduct", () => {
         ]
       })
     );
-    expect(product.petType).toBe("cats");
+    expect(product.petTypes).toEqual(["cats"]);
+  });
+
+  it("reads multiple pet-type facet values for a universal product", () => {
+    const product = adaptVendureProduct(
+      buildProduct({
+        facetValues: [
+          { code: "camitas", name: "Camitas", facet: { code: "category" } },
+          { code: "dogs", name: "Perros", facet: { code: "pet-type" } },
+          { code: "cats", name: "Gatos", facet: { code: "pet-type" } }
+        ]
+      })
+    );
+    expect(product.petTypes).toEqual(["dogs", "cats"]);
   });
 
   it("dedupes sizes and colors across multiple variants", () => {

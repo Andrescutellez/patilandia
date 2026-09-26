@@ -67,6 +67,11 @@ export function facetValueCode(record: VendureProduct, facetCode: string): strin
   return record.facetValues.find((value) => value.facet.code === facetCode)?.code;
 }
 
+/** Like facetValueCode, but for facets a product can carry more than one value of (pet-type). */
+export function facetValueCodes(record: VendureProduct, facetCode: string): string[] {
+  return record.facetValues.filter((value) => value.facet.code === facetCode).map((value) => value.code);
+}
+
 export function facetValueName(record: VendureProduct, facetCode: string): string | undefined {
   return record.facetValues.find((value) => value.facet.code === facetCode)?.name;
 }
@@ -75,8 +80,10 @@ export function readTheme(value: string | undefined): CollectionTheme {
   return THEMES.includes(value as CollectionTheme) ? (value as CollectionTheme) : "dreams";
 }
 
-function readPetType(value: string | undefined): PetType {
-  return PET_TYPES.includes(value as PetType) ? (value as PetType) : "all";
+function readPetTypes(record: VendureProduct): PetType[] {
+  return facetValueCodes(record, "pet-type").filter((code): code is PetType =>
+    PET_TYPES.includes(code as PetType)
+  );
 }
 
 function toVariantRefs(variants: VendureProductVariant[]): StorefrontVariantRef[] {
@@ -139,7 +146,7 @@ export function adaptVendureProduct(record: VendureProduct): StorefrontProduct {
     categorySlug,
     categoryLabel: facetValueName(record, "category") ?? categorySlug,
     collectionSlug: themeSlug ?? "dreams",
-    petType: readPetType(facetValueCode(record, "pet-type")),
+    petTypes: readPetTypes(record),
     shortDescription: customFields.shortDescription ?? "",
     description: record.description,
     image,
@@ -220,7 +227,7 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
     categorySlug,
     categoryLabel: facetValueName(product, "category") ?? categorySlug,
     collectionSlug: themeSlug ?? "dreams",
-    petType: "all",
+    petTypes: [],
     shortDescription: product.customFields?.shortDescription ?? "",
     description: "",
     image,
