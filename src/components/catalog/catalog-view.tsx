@@ -85,10 +85,11 @@ export function CatalogView({
     }
 
     if (selectedPetTypes.length > 0) {
-      nextProducts = nextProducts.filter(
-        (product) =>
-          product.petTypes.length === 0 ||
-          product.petTypes.some((petType) => selectedPetTypes.includes(petType))
+      // Strict once a pet type is actively selected — a product with no pet-type tag never
+      // disappears from *general* browsing (see the untagged default above), but it also
+      // shouldn't leak into a filter the shopper explicitly asked for.
+      nextProducts = nextProducts.filter((product) =>
+        product.petTypes.some((petType) => selectedPetTypes.includes(petType))
       );
     }
 
