@@ -2,43 +2,22 @@ import Link from "next/link";
 
 import { benefits } from "@/data/mock-store";
 import { CategoryStrip } from "@/components/home/category-strip";
-import { CollectionCard } from "@/components/home/collection-card";
 import { HomeHero } from "@/components/home/home-hero";
 import { PetTypeCards } from "@/components/home/pet-type-cards";
 import { ProductCard } from "@/components/products/product-card";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/ui/fade-in";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getHomepageCollections, getHomepageProducts } from "@/lib/storefront";
+import { getHomepageProducts } from "@/lib/storefront";
 
 export default async function HomePage() {
-  const [featuredProducts, collections] = await Promise.all([
-    getHomepageProducts(),
-    getHomepageCollections(),
-  ]);
+  const featuredProducts = await getHomepageProducts();
 
   return (
     <div className="pb-12">
       <HomeHero />
       <CategoryStrip />
       <PetTypeCards />
-
-      <section className="mx-auto max-w-7xl space-y-6 px-4 pt-12 sm:px-6 lg:px-8">
-        <FadeIn className="space-y-6">
-          <SectionHeading
-            actionHref="/categorias"
-            actionLabel="Ver todas"
-            eyebrow="Nuestras colecciones"
-            title="Mundos mágicos para cada personalidad"
-            titleFont="marker"
-          />
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-5">
-            {collections.map((collection) => (
-              <CollectionCard key={collection.slug} collection={collection} />
-            ))}
-          </div>
-        </FadeIn>
-      </section>
 
       <section className="mx-auto max-w-7xl space-y-6 px-4 pt-12 sm:px-6 lg:px-8">
         <FadeIn className="space-y-6">
