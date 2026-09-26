@@ -51,16 +51,23 @@ export async function getStorefrontProducts() {
     next: { revalidate: 60 }
   });
 
-  if (response?.products?.items.length) {
-    return response.products.items.map(adaptVendureProduct);
+  // vendureFetch returns null only when Vendure itself is unreachable/erroring — that's the only
+  // case the mock catalog should stand in for. A real, successful response with zero products
+  // (e.g. the catalog was just cleared in the admin) must show as zero, not silently fall back to
+  // the mocks and look like Vendure still has products when it doesn't.
+  if (response === null) {
+    return products;
   }
 
-  return products;
+  return (response.products?.items ?? []).map(adaptVendureProduct);
 }
 
 export async function getStorefrontProduct(slug: string) {
+  // No separate mock fallback here: getStorefrontProducts() already returns the full mock catalog
+  // when Vendure is unreachable, so a real, empty (or slug-not-found) response from Vendure must
+  // resolve to "not found" — not quietly resurrect a mock product that isn't actually in the store.
   const allProducts = await getStorefrontProducts();
-  return allProducts.find((product) => product.slug === slug) ?? findProductBySlug(slug);
+  return allProducts.find((product) => product.slug === slug);
 }
 
 export async function getHomepageProducts() {
