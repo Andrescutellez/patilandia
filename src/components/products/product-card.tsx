@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,26 @@ const themeMap: Record<StorefrontProduct["theme"], string> = {
 };
 
 export function ProductCard({ product }: { product: StorefrontProduct }) {
+  const router = useRouter();
   const { addToCart, isWishlisted, toggleWishlist } = useStore();
   const discount = percentageOff(product.price, product.compareAtPrice);
   const wishlisted = isWishlisted(product.id);
   const [addError, setAddError] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+
+  async function handleAdd(navigateToCheckout: boolean) {
+    setIsAdding(true);
+    setAddError(false);
+    const ok = await addToCart(product, { size: product.sizes[0], color: product.colors[0] });
+    setIsAdding(false);
+    if (!ok) {
+      setAddError(true);
+      return;
+    }
+    if (navigateToCheckout) {
+      router.push("/checkout");
+    }
+  }
 
   return (
     <article className="group overflow-hidden rounded-[1.8rem] border border-white/60 bg-white shadow-[0_20px_50px_rgba(33,38,84,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(33,38,84,0.14)]">
@@ -52,26 +68,23 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
         </button>
       </div>
 
-      <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
-        <div className="space-y-1.5 sm:space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--brand-violet-deep)] sm:text-xs sm:tracking-[0.25em]">
-            {product.categoryLabel}
-          </p>
+      <div className="space-y-2 p-2.5 sm:space-y-3 sm:p-4">
+        <div className="space-y-1">
           <Link
-            className="block font-display text-lg leading-tight text-[var(--ink)] sm:text-2xl sm:leading-none lg:text-3xl"
+            className="block font-display text-sm leading-tight text-[var(--ink)] sm:text-lg sm:leading-none lg:text-xl"
             href={`/producto/${product.slug}`}
           >
             {product.name}
           </Link>
-          <p className="line-clamp-2 text-xs leading-5 text-[var(--muted)] sm:text-sm sm:leading-6">
+          <p className="line-clamp-2 text-[11px] leading-4 text-[var(--muted)] sm:text-xs sm:leading-5">
             {product.shortDescription}
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-[var(--muted)] sm:gap-2 sm:text-sm">
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] sm:gap-2 sm:text-xs">
           {product.reviewCount > 0 ? (
             <>
-              <RatingStars className="h-3 w-3 sm:h-4 sm:w-4" rating={product.rating} />
+              <RatingStars className="h-3 w-3" rating={product.rating} />
               <span>{product.rating.toFixed(1)}</span>
               <span>({product.reviewCount})</span>
             </>
@@ -82,12 +95,12 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
 
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-lg font-black text-[var(--brand-violet-deep)] sm:text-2xl">
+            <p className="text-base font-black text-[var(--brand-violet-deep)] sm:text-xl">
               {formatCurrency(product.price)}
             </p>
             {product.compareAtPrice ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[var(--muted)] line-through sm:text-sm">
+                <span className="text-xs text-[var(--muted)] line-through">
                   {formatCurrency(product.compareAtPrice)}
                 </span>
                 {discount ? (
@@ -100,23 +113,28 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          disabled={isAdding}
-          onClick={async () => {
-            setIsAdding(true);
-            setAddError(false);
-            const ok = await addToCart(product, { size: product.sizes[0], color: product.colors[0] });
-            setIsAdding(false);
-            if (!ok) setAddError(true);
-          }}
-          size="sm"
-          type="button"
-        >
-          <CartIcon className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">Agregar al carrito</span>
-          <span className="sm:hidden">Agregar</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="flex-1"
+            disabled={isAdding}
+            onClick={() => handleAdd(false)}
+            size="sm"
+            type="button"
+          >
+            <CartIcon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Agregar</span>
+          </Button>
+          <Button
+            className="flex-1"
+            disabled={isAdding}
+            onClick={() => handleAdd(true)}
+            size="sm"
+            type="button"
+            variant="secondary"
+          >
+            Comprar
+          </Button>
+        </div>
         {addError ? (
           <p className="text-center text-xs font-semibold text-red-500">No pudimos agregarlo. Intentá de nuevo.</p>
         ) : null}
