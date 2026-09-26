@@ -6,7 +6,7 @@ import { ChevronRightIcon } from "@/components/ui/icons";
 
 export function HomeHero() {
   return (
-    <section className="relative overflow-hidden bg-[#1d256d] aspect-[1786/800] md:aspect-[2098/650]">
+    <section className="relative max-h-[380px] overflow-hidden bg-[#1d256d] aspect-[1786/800] md:max-h-[620px] md:aspect-[2098/650]">
       {/* The real headline lives baked into the hero image (see the Image alt text below), so
           this sr-only h1 exists purely so the page has one real semantic heading for SEO/screen
           readers — same copy as the image, not shown visually, doesn't affect the design. */}
