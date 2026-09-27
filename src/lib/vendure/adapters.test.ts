@@ -155,6 +155,26 @@ describe("adaptVendureProduct", () => {
     ]);
   });
 
+  it("keeps size-only variants (no color option group) buyable, not dropped from `variants`", () => {
+    // Regression for a real production crash: a product that only varies by size (e.g. pet food
+    // sized by weight, no "color" option group in Vendure) used to be silently dropped from
+    // `variants` entirely (both size AND color were required), leaving it permanently
+    // unaddable-to-cart, and its undefined `colors[0]` crashed the product detail page outright.
+    const product = adaptVendureProduct(
+      buildProduct({
+        variants: [
+          buildVariant({ id: "1", options: [{ name: "S", group: { code: "size" } }] }),
+          buildVariant({ id: "2", options: [{ name: "M", group: { code: "size" } }] })
+        ]
+      })
+    );
+    expect(product.colors).toEqual([]);
+    expect(product.variants).toEqual([
+      { id: "1", size: "S", colorName: undefined },
+      { id: "2", size: "M", colorName: undefined }
+    ]);
+  });
+
   it("treats a product as in stock when at least one variant isn't OUT_OF_STOCK", () => {
     const product = adaptVendureProduct(
       buildProduct({

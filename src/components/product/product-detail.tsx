@@ -47,7 +47,7 @@ export function ProductDetail({
 }) {
   const { addToCart, isLoggedIn, isWishlisted, toggleWishlist, setWhatsappMessage } = useStore();
   const router = useRouter();
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<ProductSize>(product.sizes[1] ?? product.sizes[0]);
   const [quantity, setQuantity] = useState(1);
   const [personalizationAnswers, setPersonalizationAnswers] = useState<PersonalizationAnswerDraft[]>([]);
@@ -67,7 +67,7 @@ export function ProductDetail({
     });
     setIsAdding(false);
     if (!ok) {
-      setAddError("No pudimos agregarlo al carrito. Intentá de nuevo en un momento.");
+      setAddError("No pudimos agregarlo al carrito. Intenta de nuevo en un momento.");
       return;
     }
     if (navigateToCheckout) {
@@ -202,11 +202,8 @@ export function ProductDetail({
             <button
               className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[var(--brand-violet-deep)]"
               onClick={() => {
-                const message = buildProductHelpMessage(
-                  product.name,
-                  `${selectedColor.name} / ${selectedSize}`,
-                  window.location.href
-                );
+                const variantLabel = selectedColor ? `${selectedColor.name} / ${selectedSize}` : selectedSize;
+                const message = buildProductHelpMessage(product.name, variantLabel, window.location.href);
                 window.open(buildWhatsAppLink(whatsappSettings.phoneNumber, message), "_blank", "noopener,noreferrer");
               }}
               type="button"

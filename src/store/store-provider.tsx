@@ -231,8 +231,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addToCart: async (product, options) => {
         const selectedSize = options?.size ?? product.sizes[0];
         const selectedColor = options?.color ?? product.colors[0];
+        // A variant's `size`/`colorName` is undefined when the product has no such option group
+        // at all (see toVariantRefs) — in that case any selection matches on that dimension,
+        // since there was never a choice to make for it.
         const variantId = product.variants?.find(
-          (variant) => variant.size === selectedSize && variant.colorName === selectedColor.name
+          (variant) =>
+            (variant.size === undefined || variant.size === selectedSize) &&
+            (variant.colorName === undefined || variant.colorName === selectedColor?.name)
         )?.id;
 
         if (!variantId) {

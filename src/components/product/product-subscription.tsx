@@ -38,7 +38,7 @@ export function ProductSubscription({
   product: StorefrontProduct;
   isLoggedIn: boolean;
 }) {
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<ProductSize>(product.sizes[1] ?? product.sizes[0]);
   const [quantity, setQuantity] = useState(1);
   const [frequencyDays, setFrequencyDays] = useState<number>(SUBSCRIPTION_FREQUENCIES_DAYS[1]);
@@ -109,7 +109,9 @@ export function ProductSubscription({
     setError("");
     try {
       const variantId = product.variants?.find(
-        (variant) => variant.size === selectedSize && variant.colorName === selectedColor.name
+        (variant) =>
+          (variant.size === undefined || variant.size === selectedSize) &&
+          (variant.colorName === undefined || variant.colorName === selectedColor?.name)
       )?.id;
       if (!variantId) {
         setError("Esta combinación no está disponible.");

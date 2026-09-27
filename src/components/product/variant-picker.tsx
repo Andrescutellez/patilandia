@@ -15,30 +15,32 @@ export function VariantPicker({
 }: {
   colors: ProductColor[];
   sizes: ProductSize[];
-  selectedColor: ProductColor;
+  selectedColor: ProductColor | undefined;
   selectedSize: ProductSize;
   onSelectColor: (color: ProductColor) => void;
   onSelectSize: (size: ProductSize) => void;
 }) {
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-sm font-bold text-[var(--ink)]">Color: {selectedColor.name}</p>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {colors.map((color) => (
-            <button
-              key={color.name}
-              aria-label={color.name}
-              className={`h-11 w-11 rounded-full border-2 ${
-                selectedColor.name === color.name ? "border-[var(--brand-violet)]" : "border-white"
-              } shadow-[0_8px_20px_rgba(31,36,84,0.08)]`}
-              onClick={() => onSelectColor(color)}
-              style={{ backgroundColor: color.hex }}
-              type="button"
-            />
-          ))}
+      {colors.length > 0 ? (
+        <div>
+          <p className="text-sm font-bold text-[var(--ink)]">Color: {selectedColor?.name}</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            {colors.map((color) => (
+              <button
+                key={color.name}
+                aria-label={color.name}
+                className={`h-11 w-11 rounded-full border-2 ${
+                  selectedColor?.name === color.name ? "border-[var(--brand-violet)]" : "border-white"
+                } shadow-[0_8px_20px_rgba(31,36,84,0.08)]`}
+                onClick={() => onSelectColor(color)}
+                style={{ backgroundColor: color.hex }}
+                type="button"
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div>
         <p className="text-sm font-bold text-[var(--ink)]">Tamaño</p>

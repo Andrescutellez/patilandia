@@ -38,8 +38,12 @@ export interface ProductFeature {
 
 export interface StorefrontVariantRef {
   id: string;
-  size: ProductSize;
-  colorName: string;
+  /** Undefined when this product has no "size" option group in Vendure (e.g. a single-SKU
+   *  product) — see toVariantRefs in adapters.ts. */
+  size?: ProductSize;
+  /** Undefined when this product has no "color" option group in Vendure (e.g. pet food that only
+   *  varies by weight) — see toVariantRefs in adapters.ts. */
+  colorName?: string;
 }
 
 export interface StorefrontProduct {

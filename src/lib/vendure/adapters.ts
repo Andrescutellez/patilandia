@@ -86,16 +86,15 @@ function readPetTypes(record: VendureProduct): PetType[] {
   );
 }
 
+// A variant is only required to carry the option groups the product actually defines — a
+// size-only product (no "color" group, e.g. pet food sized by weight) or a color-only product
+// both need their real variant matched by addToCart, not silently dropped from `refs`.
 function toVariantRefs(variants: VendureProductVariant[]): StorefrontVariantRef[] {
-  const refs: StorefrontVariantRef[] = [];
-  for (const variant of variants) {
-    const size = variant.options.find((o) => o.group.code === "size")?.name;
-    const colorName = variant.options.find((o) => o.group.code === "color")?.name;
-    if (size && colorName) {
-      refs.push({ id: variant.id, size: size as ProductSize, colorName });
-    }
-  }
-  return refs;
+  return variants.map((variant) => ({
+    id: variant.id,
+    size: variant.options.find((o) => o.group.code === "size")?.name as ProductSize | undefined,
+    colorName: variant.options.find((o) => o.group.code === "color")?.name,
+  }));
 }
 
 function dedupeSizes(variants: VendureProductVariant[]): ProductSize[] {

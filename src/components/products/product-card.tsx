@@ -136,7 +136,7 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
           </Button>
         </div>
         {addError ? (
-          <p className="text-center text-xs font-semibold text-red-500">No pudimos agregarlo. Intentá de nuevo.</p>
+          <p className="text-center text-xs font-semibold text-red-500">No pudimos agregarlo. Intenta de nuevo.</p>
         ) : null}
       </div>
     </article>
