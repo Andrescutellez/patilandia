@@ -23,10 +23,27 @@ export interface ShippingMethodOption {
   priceWithTax: number;
 }
 
+export interface OrderFulfillment {
+  state: string;
+  method: string;
+  trackingCode: string | null;
+}
+
+export interface OrderShippingAddress {
+  fullName: string;
+  streetLine1: string;
+  streetLine2: string;
+  city: string;
+  province: string;
+  country: string;
+  phoneNumber: string;
+}
+
 export interface OrderSummary {
   id: string;
   code: string;
   state: string;
+  orderPlacedAt: string | null;
   customerEmail: string | null;
   subtotal: number;
   shippingTotal: number;
@@ -51,17 +68,22 @@ export interface OrderSummary {
   giftMessage: string | null;
   giftSenderName: string | null;
   giftAnonymous: boolean;
+  fulfillments: OrderFulfillment[];
+  shippingAddress: OrderShippingAddress | null;
 }
 
 const ORDER_FIELDS = `
   id
   code
   state
+  orderPlacedAt
   customer { emailAddress }
   subTotal
   subTotalWithTax
   shippingWithTax
   totalWithTax
+  fulfillments { state method trackingCode }
+  shippingAddress { fullName streetLine1 streetLine2 city province country phoneNumber }
   customFields {
     loyaltyPointsEarned
     loyaltyPointsRedeemed
@@ -108,11 +130,22 @@ interface RawOrder {
   id: string;
   code: string;
   state: string;
+  orderPlacedAt: string | null;
   customer?: { emailAddress: string } | null;
   subTotal: number;
   subTotalWithTax: number;
   shippingWithTax: number;
   totalWithTax: number;
+  fulfillments?: Array<{ state: string; method: string; trackingCode: string | null }> | null;
+  shippingAddress?: {
+    fullName?: string | null;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
+    city?: string | null;
+    province?: string | null;
+    country?: string | null;
+    phoneNumber?: string | null;
+  } | null;
   customFields?: {
     loyaltyPointsEarned: number;
     loyaltyPointsRedeemed: number;
@@ -139,6 +172,7 @@ function toOrderSummary(order: RawOrder): OrderSummary {
     id: order.id,
     code: order.code,
     state: order.state,
+    orderPlacedAt: order.orderPlacedAt,
     customerEmail: order.customer?.emailAddress ?? null,
     subtotal: order.subTotalWithTax / VENDURE_MONEY_FACTOR,
     productSubtotal: order.subTotal / VENDURE_MONEY_FACTOR,
@@ -152,6 +186,22 @@ function toOrderSummary(order: RawOrder): OrderSummary {
     giftMessage: order.customFields?.giftMessage ?? null,
     giftSenderName: order.customFields?.giftSenderName ?? null,
     giftAnonymous: order.customFields?.giftAnonymous ?? false,
+    fulfillments: (order.fulfillments ?? []).map((fulfillment) => ({
+      state: fulfillment.state,
+      method: fulfillment.method,
+      trackingCode: fulfillment.trackingCode
+    })),
+    shippingAddress: order.shippingAddress
+      ? {
+          fullName: order.shippingAddress.fullName ?? "",
+          streetLine1: order.shippingAddress.streetLine1 ?? "",
+          streetLine2: order.shippingAddress.streetLine2 ?? "",
+          city: order.shippingAddress.city ?? "",
+          province: order.shippingAddress.province ?? "",
+          country: order.shippingAddress.country ?? "",
+          phoneNumber: order.shippingAddress.phoneNumber ?? ""
+        }
+      : null,
     lines: order.lines.map((line) =>
       adaptVendureOrderLine({
         id: line.id,
@@ -265,6 +315,40 @@ export async function updateCustomerName(
     firstName: firstName || "Cliente",
     lastName: rest.join(" ")
   });
+}
+
+/**
+ * Powers the public "/pedido/[code]" tracking page — Vendure's own `orderByCode` (see
+ * DefaultOrderByCodeAccessStrategy) lets the order's real owner (logged-in session) look it up
+ * forever, and lets ANYONE (a guest who never logs in) look it up only within a 2-hour window
+ * right after placing it. Outside that window, for a guest, Vendure throws a ForbiddenError
+ * instead of returning null — there's no typed ErrorResult here to check, so any thrown error is
+ * treated as "you need to log in to see this," which matches Vendure's real behavior exactly
+ * (a merely-wrong/unknown code resolves the field to null, never an error).
+ */
+export async function getOrderByCode(code: string): Promise<{ order: OrderSummary | null; forbidden: boolean }> {
+  try {
+    const data = await shopFetch<{ orderByCode: RawOrder | null }>(
+      `query OrderByCode($code: String!) { orderByCode(code: $code) { ${ORDER_FIELDS} } }`,
+      { code }
+    );
+    return { order: data.orderByCode ? toOrderSummary(data.orderByCode) : null, forbidden: false };
+  } catch {
+    return { order: null, forbidden: true };
+  }
+}
+
+/** Full order history for a real logged-in session — requires a native account (see
+ *  Customer.orders), unlike orderByCode above. Excludes AddingItems: that state is just whatever
+ *  cart happens to be open right now, never a placed order, so it doesn't belong in history. */
+export async function getMyOrders(): Promise<OrderSummary[]> {
+  const data = await shopFetch<{ activeCustomer: { orders: { items: RawOrder[] } } | null }>(
+    `query MyOrders { activeCustomer { orders { items { ${ORDER_FIELDS} } } } }`
+  );
+  return (data.activeCustomer?.orders.items ?? [])
+    .filter((order) => order.state !== "AddingItems")
+    .map(toOrderSummary)
+    .sort((a, b) => (b.orderPlacedAt ?? "").localeCompare(a.orderPlacedAt ?? ""));
 }
 
 export async function getEligibleShippingMethods(): Promise<ShippingMethodOption[]> {

@@ -13,20 +13,8 @@ import { buildCartSummaryMessage, buildWhatsAppLink, getWhatsappSettings, type W
 import { useStore } from "@/store/store-provider";
 
 export function CartPage() {
-  const {
-    cart,
-    removeFromCart,
-    subtotal,
-    updateQuantity,
-    isCartReady,
-    customerEmail,
-    setCustomerEmail,
-    cartError,
-    cartErrorCode
-  } = useStore();
+  const { cart, removeFromCart, subtotal, updateQuantity, isCartReady, customerEmail, cartError } = useStore();
   const shippingPreview = getShippingPreview(cart);
-  const [email, setEmail] = useState("");
-  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
   // Self-fetched, same pattern as AccountPatipuntosCard/AccountSubscriptionsCard — this is a client
   // component, so it can't share the server-side fetch SiteShell already did for the floating
   // button, but it's the same public, cheap query.
@@ -63,76 +51,14 @@ export function CartPage() {
     );
   }
 
-  // Pedido explícito del usuario: apenas hay algo en el carrito, lo primero que se pide es el
-  // correo — se guarda contra la orden real de Vendure (setCustomerForOrder) antes de mostrar el
-  // resto del carrito. Vendure no impone ningún orden acá, es una decisión nuestra de UX.
-  if (!customerEmail) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-12 sm:px-6 lg:px-8">
-        <form
-          className="space-y-6 rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-[0_24px_60px_rgba(31,36,84,0.1)]"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setIsSubmittingEmail(true);
-            await setCustomerEmail(email);
-            setIsSubmittingEmail(false);
-          }}
-        >
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-[var(--brand-violet-deep)]">
-              Un paso antes de tu carrito
-            </p>
-            <h1 className="mt-3 font-display text-4xl leading-none text-[var(--ink)]">
-              ¿A qué correo te escribimos?
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-              Lo usamos para guardar tu compra y avisarte del estado de tu pedido.
-            </p>
-          </div>
-
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-[var(--ink)]">Correo electrónico</span>
-            <input
-              autoFocus
-              className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="tu@correo.com"
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-
-          {cartErrorCode === "EMAIL_ADDRESS_CONFLICT_ERROR" ? (
-            <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Ya existe una cuenta con este correo.{" "}
-              <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/carrito">
-                Inicia sesión
-              </Link>{" "}
-              para continuar con tu compra.
-            </div>
-          ) : cartError ? (
-            <p className="text-sm font-semibold text-red-500">{cartError}</p>
-          ) : null}
-
-          <button
-            className={buttonStyles({ size: "lg", className: "w-full" })}
-            disabled={isSubmittingEmail}
-            type="submit"
-          >
-            {isSubmittingEmail ? "Guardando..." : "Siguiente"}
-          </button>
-        </form>
-      </div>
-    );
-  }
-
+  // El correo ya no se pide acá — se pide en checkout, justo antes de mostrar dirección/envío/pago
+  // (ver checkout-page.tsx), así el carrito se puede ver libremente sin ninguna barrera.
   return (
     <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <div>
         <p className="text-sm font-black uppercase tracking-[0.3em] text-[var(--brand-violet-deep)]">Carrito</p>
         <h1 className="mt-3 font-display text-5xl leading-none text-[var(--ink)]">Tu selección en Patilandia</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Comprando como {customerEmail}</p>
+        {customerEmail ? <p className="mt-2 text-sm text-[var(--muted)]">Comprando como {customerEmail}</p> : null}
       </div>
 
       {cartError ? (

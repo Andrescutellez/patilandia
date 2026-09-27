@@ -90,6 +90,7 @@ export function CheckoutPage() {
   } = useStore();
 
   const [email, setEmail] = useState("");
+  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
   const [address, setAddress] = useState<AddressForm>(EMPTY_ADDRESS);
 
   const [isGift, setIsGift] = useState(false);
@@ -244,6 +245,66 @@ export function CheckoutPage() {
     );
   }
 
+  // Pedido explícito del usuario: el carrito se puede ver libremente, y el correo se pide acá,
+  // como primer paso de checkout, antes de mostrar dirección/envío/pago — no al agregar al carrito
+  // (ver cart-page.tsx). Vendure no impone ningún orden acá, es una decisión nuestra de UX.
+  if (!customerEmail) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-12 sm:px-6 lg:px-8">
+        <form
+          className="space-y-6 rounded-[2rem] border border-white/60 bg-white/88 p-8 shadow-[0_24px_60px_rgba(31,36,84,0.1)]"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            setIsSubmittingEmail(true);
+            await setCustomerEmail(email);
+            setIsSubmittingEmail(false);
+          }}
+        >
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.3em] text-[var(--brand-violet-deep)]">Checkout</p>
+            <h1 className="mt-3 font-display text-4xl leading-none text-[var(--ink)]">¿A qué correo te escribimos?</h1>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              Lo usamos para guardar tu compra y avisarte del estado de tu pedido.
+            </p>
+          </div>
+
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-[var(--ink)]">Correo electrónico</span>
+            <input
+              autoFocus
+              className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="tu@correo.com"
+              required
+              type="email"
+              value={email}
+            />
+          </label>
+
+          {cartErrorCode === "EMAIL_ADDRESS_CONFLICT_ERROR" ? (
+            <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Ya existe una cuenta con este correo.{" "}
+              <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/checkout">
+                Inicia sesión
+              </Link>{" "}
+              para continuar con tu compra.
+            </div>
+          ) : cartError ? (
+            <p className="text-sm font-semibold text-red-500">{cartError}</p>
+          ) : null}
+
+          <button
+            className={buttonStyles({ size: "lg", className: "w-full" })}
+            disabled={isSubmittingEmail}
+            type="submit"
+          >
+            {isSubmittingEmail ? "Guardando..." : "Continuar"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   const selectedShippingMethod = shippingMethods.find((method) => method.id === selectedShippingMethodId);
   const maxRedeemable =
     loyaltyAccount && loyaltyAccount.eligible && loyaltySettings
@@ -265,12 +326,10 @@ export function CheckoutPage() {
       const ready = await ensureAddingItems();
       if (!ready) return;
 
-      let confirmedEmail = customerEmail;
-      if (!confirmedEmail) {
-        const ok = await setCustomerEmail(email);
-        if (!ok) return;
-        confirmedEmail = email;
-      }
+      // Guaranteed set by the email step below — this form only ever renders once customerEmail
+      // is confirmed (see the `!customerEmail` early return above).
+      if (!customerEmail) return;
+      const confirmedEmail = customerEmail;
 
       // The email step only ever captures a placeholder name for a guest — a logged-in customer
       // already has a real name from registration, and calling this while logged in throws
@@ -362,37 +421,12 @@ export function CheckoutPage() {
         <h1 className="mt-3 font-display text-5xl leading-none text-[var(--ink)]">Listo para completar la orden</h1>
       </div>
 
-      {cartErrorCode === "EMAIL_ADDRESS_CONFLICT_ERROR" ? (
-        <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Ya existe una cuenta con este correo.{" "}
-          <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/checkout">
-            Inicia sesión
-          </Link>{" "}
-          para continuar con tu compra.
-        </div>
-      ) : cartError ? (
+      {cartError ? (
         <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">{cartError}</p>
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-6">
-          {!customerEmail ? (
-            <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
-              <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Correo electrónico</h2>
-              <label className="mt-5 grid gap-2">
-                <span className="text-sm font-bold text-[var(--ink)]">Correo electrónico</span>
-                <input
-                  className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="tu@correo.com"
-                  required
-                  type="email"
-                  value={email}
-                />
-              </label>
-            </div>
-          ) : null}
-
           <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
             <label className="flex cursor-pointer items-center justify-between gap-4">
               <span>
