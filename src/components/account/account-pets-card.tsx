@@ -34,7 +34,7 @@ export function AccountPetsCard() {
         {count === null
           ? "Cargando…"
           : count === 0
-            ? "Contanos de tus mascotas para recomendarte productos a su medida."
+            ? "Cuéntanos de tus mascotas para recomendarte productos a su medida."
             : `${count} ${count === 1 ? "mascota cargada" : "mascotas cargadas"}.`}
       </p>
       <Link className={buttonStyles({ variant: "secondary", size: "sm", className: "mt-5 w-full" })} href="/cuenta/mascotas">

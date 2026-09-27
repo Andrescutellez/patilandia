@@ -86,7 +86,7 @@ function VerificationBanner({ email, onVerified }: { email: string; onVerified: 
       </p>
       {status === "sent" ? (
         <p className="mt-3 text-sm font-bold text-[var(--brand-violet-deep)]">
-          Listo, revisá tu bandeja de entrada y hacé click en el enlace.
+          Listo, revisa tu bandeja de entrada y haz click en el enlace.
         </p>
       ) : (
         <Button className="mt-3" disabled={sending} onClick={handleRequest} type="button" size="sm">
@@ -173,10 +173,10 @@ function PatipuntosDashboard({ email, isLoggedIn }: { email: string; isLoggedIn:
       ) : (
         <div className="rounded-[1.4rem] border border-[var(--brand-violet)] bg-[var(--brand-soft)] p-5">
           <p className="font-display text-xl leading-none text-[var(--brand-violet-deep)]">
-            Ya podés canjear tus Patipuntos
+            Ya puedes canjear tus Patipuntos
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Elegí cuántos usar en el checkout de tu próxima compra — hasta el {settings.maxRedemptionPercentage}% del
+            Elige cuántos usar en el checkout de tu próxima compra — hasta el {settings.maxRedemptionPercentage}% del
             subtotal.
           </p>
         </div>
@@ -199,7 +199,7 @@ function PatipuntosDashboard({ email, isLoggedIn }: { email: string; isLoggedIn:
       <div className="rounded-[1.4rem] border border-[var(--line)] bg-white p-5">
         <h2 className="font-display text-2xl leading-none text-[var(--ink)]">Historial de movimientos</h2>
         {transactions.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--muted)]">Todavía no tenés movimientos.</p>
+          <p className="mt-3 text-sm text-[var(--muted)]">Todavía no tienes movimientos.</p>
         ) : (
           <ul className="mt-4 divide-y divide-[var(--line)]">
             {transactions.map((tx) => (

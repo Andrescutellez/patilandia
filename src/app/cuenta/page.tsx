@@ -19,7 +19,7 @@ const comingSoonCards = [
   },
   {
     title: "Direcciones guardadas",
-    description: "Guardá tus direcciones de envío para no volver a escribirlas en cada compra."
+    description: "Guarda tus direcciones de envío para no volver a escribirlas en cada compra."
   }
 ];
 

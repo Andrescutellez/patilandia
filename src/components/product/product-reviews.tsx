@@ -90,7 +90,7 @@ function ReviewForm({ productId }: { productId: string }) {
       <textarea
         className="w-full rounded-[0.9rem] border border-[var(--line)] px-4 py-2.5 text-sm"
         onChange={(event) => setBody(event.target.value)}
-        placeholder="Contanos qué te pareció el producto"
+        placeholder="Cuéntanos qué te pareció el producto"
         required
         rows={4}
         value={body}

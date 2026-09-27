@@ -9,7 +9,7 @@ import { useStore } from "@/store/store-provider";
 
 const ERROR_MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS_ERROR: "Correo o contraseña incorrectos.",
-  NOT_VERIFIED_ERROR: "Todavía no confirmaste tu correo — revisá tu bandeja de entrada."
+  NOT_VERIFIED_ERROR: "Todavía no confirmaste tu correo — revisa tu bandeja de entrada."
 };
 
 export function LoginForm() {
@@ -39,7 +39,7 @@ export function LoginForm() {
       onSubmit={handleSubmit}
     >
       <div className="text-center">
-        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Iniciá sesión</h1>
+        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Inicia sesión</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">Para ver tus mascotas, tus Patipuntos y tu historial.</p>
       </div>
 

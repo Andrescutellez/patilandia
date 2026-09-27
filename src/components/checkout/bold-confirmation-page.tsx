@@ -64,7 +64,7 @@ export function BoldConfirmationPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <h1 className="font-display text-4xl leading-none text-[var(--ink)]">No encontramos tu pedido</h1>
         <p className="mx-auto mt-4 max-w-md text-base leading-8 text-[var(--muted)]">
-          Este link no tiene la información que esperábamos. Si ya pagaste, escribinos por WhatsApp con tu correo.
+          Este link no tiene la información que esperábamos. Si ya pagaste, escríbenos por WhatsApp con tu correo.
         </p>
         <Link className={buttonStyles({ size: "lg", className: "mt-8" })} href="/tienda">
           Volver a la tienda
@@ -103,7 +103,7 @@ export function BoldConfirmationPage() {
         <p className="text-sm font-black uppercase tracking-[0.3em] text-red-500">Pedido {orderCode}</p>
         <h1 className="mt-3 font-display text-4xl leading-none text-[var(--ink)]">El pago no se completó</h1>
         <p className="mx-auto mt-4 max-w-md text-base leading-8 text-[var(--muted)]">
-          Bold no pudo procesar el pago. Tu carrito sigue guardado — podés volver a intentar con otro medio de pago.
+          Bold no pudo procesar el pago. Tu carrito sigue guardado — puedes volver a intentar con otro medio de pago.
         </p>
         <Link className={buttonStyles({ size: "lg", className: "mt-8" })} href="/checkout">
           Volver al checkout

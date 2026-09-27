@@ -19,7 +19,7 @@ export function AccountHeader() {
     return (
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.6rem] border border-white/60 bg-white/70 p-5">
         <p className="text-sm leading-6 text-[var(--muted)]">
-          Podés seguir comprando como invitado — crear una cuenta es opcional, pero guarda tus
+          Puedes seguir comprando como invitado — crear una cuenta es opcional, pero guarda tus
           mascotas, tus Patipuntos y tu historial en un solo lugar.
         </p>
         <div className="flex shrink-0 gap-3">

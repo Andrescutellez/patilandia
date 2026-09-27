@@ -34,7 +34,7 @@ export function VerifyPatipuntosEmail() {
       ) : status === "success" ? (
         <>
           <h1 className="font-display text-3xl leading-none text-[var(--ink)]">¡Correo verificado!</h1>
-          <p className="text-sm text-[var(--muted)]">Ya podés canjear tus Patipuntos en tu próxima compra.</p>
+          <p className="text-sm text-[var(--muted)]">Ya puedes canjear tus Patipuntos en tu próxima compra.</p>
         </>
       ) : (
         <>

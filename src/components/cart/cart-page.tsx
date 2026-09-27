@@ -107,7 +107,7 @@ export function CartPage() {
             <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
               Ya existe una cuenta con este correo.{" "}
               <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/carrito">
-                Iniciá sesión
+                Inicia sesión
               </Link>{" "}
               para continuar con tu compra.
             </div>

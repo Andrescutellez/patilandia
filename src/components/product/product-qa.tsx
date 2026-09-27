@@ -38,7 +38,7 @@ function QuestionForm({ productId }: { productId: string }) {
 
   return (
     <form className="space-y-4 rounded-[1.4rem] border border-[var(--line)] bg-white p-5" onSubmit={handleSubmit}>
-      <p className="font-bold text-[var(--ink)]">Hacé tu pregunta</p>
+      <p className="font-bold text-[var(--ink)]">Haz tu pregunta</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <input

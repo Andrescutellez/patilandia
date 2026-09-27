@@ -212,7 +212,7 @@ export function ProductDetail({
               type="button"
             >
               <WhatsAppIcon className="h-4 w-4" />
-              ¿Dudas? Preguntanos por WhatsApp
+              ¿Dudas? Pregúntanos por WhatsApp
             </button>
           ) : null}
         </div>

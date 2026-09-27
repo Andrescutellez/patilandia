@@ -9,7 +9,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 export const metadata = {
   title: "Categorías",
   description:
-    "Explorá el catálogo de Patilandia por categoría: camitas, juguetes, alimentos, accesorios, higiene, transporte y ropa para tu mascota.",
+    "Explora el catálogo de Patilandia por categoría: camitas, juguetes, alimentos, accesorios, higiene, transporte y ropa para tu mascota.",
   alternates: { canonical: "/categorias" }
 };
 

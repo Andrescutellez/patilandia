@@ -50,7 +50,7 @@ export function ResetPasswordForm() {
       onSubmit={handleSubmit}
     >
       <div className="text-center">
-        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Elegí tu nueva contraseña</h1>
+        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Elige tu nueva contraseña</h1>
       </div>
 
       <input

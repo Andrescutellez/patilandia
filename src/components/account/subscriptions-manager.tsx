@@ -52,7 +52,7 @@ function LoginGate() {
     <div className="mx-auto max-w-md space-y-4 rounded-[2rem] border border-white/60 bg-white/84 p-6 text-center shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
       <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Tus suscripciones</h1>
       <p className="text-sm text-[var(--muted)]">
-        Necesitás una cuenta para gestionar tus recompras programadas.
+        Necesitas una cuenta para gestionar tus recompras programadas.
       </p>
       <div className="flex justify-center gap-4">
         <Link className="font-bold text-[var(--brand-violet-deep)] underline" href="/cuenta/iniciar-sesion">
@@ -149,7 +149,7 @@ function SubscriptionCard({
           {subscription.shippingAddress.city}
         </p>
       ) : (
-        <p className="text-sm text-red-600">Esta suscripción no tiene una dirección válida — elegí una nueva.</p>
+        <p className="text-sm text-red-600">Esta suscripción no tiene una dirección válida — elige una nueva.</p>
       )}
 
       {subscription.status !== "CANCELLED" ? (
@@ -288,7 +288,7 @@ export function SubscriptionsManager() {
       <div>
         <h1 className="font-display text-4xl leading-none text-[var(--ink)]">Tus suscripciones</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Gestioná tus recompras programadas — pausá, cambiá cantidad/frecuencia/dirección, o cancelá
+          Gestiona tus recompras programadas — pausa, cambia cantidad/frecuencia/dirección, o cancela
           cuando quieras.
         </p>
       </div>
@@ -305,7 +305,7 @@ export function SubscriptionsManager() {
 
       {subscriptions.length === 0 ? (
         <p className="rounded-[1.4rem] bg-[var(--brand-soft)] p-6 text-sm text-[var(--muted)]">
-          Todavía no tenés recompras programadas. Buscá el panel &ldquo;🔄 Recompra programada&rdquo; en
+          Todavía no tienes recompras programadas. Busca el panel &ldquo;🔄 Recompra programada&rdquo; en
           los productos que lo admiten.
         </p>
       ) : (

@@ -28,13 +28,13 @@ export function AccountSubscriptionsCard() {
 
       {!isLoggedIn ? (
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Iniciá sesión para programar recompras de tus productos favoritos.
+          Inicia sesión para programar recompras de tus productos favoritos.
         </p>
       ) : activeCount ? (
         <p className="mt-3 text-4xl font-black text-[var(--brand-violet-deep)]">{activeCount}</p>
       ) : (
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Todavía no tenés recompras activas — buscá el panel &ldquo;🔄 Recompra programada&rdquo; en los
+          Todavía no tienes recompras activas — busca el panel &ldquo;🔄 Recompra programada&rdquo; en los
           productos que lo admiten.
         </p>
       )}

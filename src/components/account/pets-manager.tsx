@@ -258,7 +258,7 @@ function PetsList({ email, isLoggedIn }: { email: string; isLoggedIn: boolean })
         <p className="text-sm text-[var(--muted)]">Cargando…</p>
       ) : pets.length === 0 && !showForm ? (
         <p className="rounded-[1.4rem] bg-[var(--brand-soft)] p-6 text-sm text-[var(--muted)]">
-          Todavía no cargaste ninguna mascota. Agregá la primera para empezar a recibir recomendaciones a
+          Todavía no cargaste ninguna mascota. Agrega la primera para empezar a recibir recomendaciones a
           su medida.
         </p>
       ) : (

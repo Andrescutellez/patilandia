@@ -69,7 +69,7 @@ export function buildProductInterestMessage(productName: string): string {
   return `Hola, estoy interesado en ${productName} y quiero saber más`;
 }
 
-/** The explicit "¿Necesitás ayuda?" link on a product page — carries enough detail (variant, URL)
+/** The explicit "¿Necesitas ayuda?" link on a product page — carries enough detail (variant, URL)
  *  that whoever answers on WhatsApp doesn't have to ask which product/variant the customer means. */
 export function buildProductHelpMessage(productName: string, variantLabel: string, url: string): string {
   return `Hola, tengo una pregunta sobre "${productName}" (${variantLabel}).\n${url}`;

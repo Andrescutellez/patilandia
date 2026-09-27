@@ -26,7 +26,7 @@ export function RequestPasswordResetForm() {
   if (sent) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-[2rem] border border-white/60 bg-white/84 p-8 text-center shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
-        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Revisá tu correo</h1>
+        <h1 className="font-display text-3xl leading-none text-[var(--ink)]">Revisa tu correo</h1>
         <p className="text-sm leading-6 text-[var(--muted)]">
           Si <strong>{emailAddress}</strong> tiene una cuenta, te mandamos un enlace para restablecer tu
           contraseña.

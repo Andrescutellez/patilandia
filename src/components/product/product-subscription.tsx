@@ -74,7 +74,7 @@ export function ProductSubscription({
           <h3 className="font-display text-2xl leading-none text-[var(--ink)]">Recompra programada</h3>
         </div>
         <p className="text-sm leading-6 text-[var(--muted)]">
-          Programá el reenvío automático de este producto cada cierto tiempo. Necesitás una cuenta para
+          Programa el reenvío automático de este producto cada cierto tiempo. Necesitas una cuenta para
           gestionar tus recompras.
         </p>
         <div className="flex gap-3">
@@ -94,7 +94,7 @@ export function ProductSubscription({
       <div className="rounded-[2rem] border border-[var(--brand-violet)] bg-[var(--brand-soft)] p-6">
         <p className="font-display text-2xl leading-none text-[var(--ink)]">¡Recompra programada! 🎉</p>
         <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-          Te vamos a avisar cuando sea momento de recomprar. Podés gestionarla desde{" "}
+          Te vamos a avisar cuando sea momento de recomprar. Puedes gestionarla desde{" "}
           <Link className="font-bold underline" href="/cuenta/suscripciones">
             Tus suscripciones
           </Link>
@@ -137,8 +137,8 @@ export function ProductSubscription({
         <h3 className="font-display text-2xl leading-none text-[var(--ink)]">Recompra programada</h3>
       </div>
       <p className="text-sm leading-6 text-[var(--muted)]">
-        Elegí cada cuánto querés que te recordemos volver a pedir este producto. No te cobramos nada
-        automáticamente — solo te avisamos y vos confirmás la compra cuando llegue la fecha.
+        Elige cada cuánto quieres que te recordemos volver a pedir este producto. No te cobramos nada
+        automáticamente — solo te avisamos y tú confirmas la compra cuando llegue la fecha.
       </p>
 
       <VariantPicker

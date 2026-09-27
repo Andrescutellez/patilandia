@@ -42,7 +42,7 @@ export function AccountPatipuntosCard() {
 
       {!hasEmail || !account ? (
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Comprá o contanos de tu mascota para empezar a ganar Patipuntos.
+          Compra o cuéntanos de tu mascota para empezar a ganar Patipuntos.
         </p>
       ) : (
         <>

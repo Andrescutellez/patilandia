@@ -202,7 +202,7 @@ export function CheckoutPage() {
                   ¡Ganaste {estimatedPoints} Patipuntos!
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  Ya tenés {formatCurrency(estimatedValue)} para tu próxima compra en{" "}
+                  Ya tienes {formatCurrency(estimatedValue)} para tu próxima compra en{" "}
                   <Link className="font-bold underline" href="/cuenta/patipuntos">
                     Tus Patipuntos
                   </Link>
@@ -366,7 +366,7 @@ export function CheckoutPage() {
         <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Ya existe una cuenta con este correo.{" "}
           <Link className="font-bold underline" href="/cuenta/iniciar-sesion?returnTo=/checkout">
-            Iniciá sesión
+            Inicia sesión
           </Link>{" "}
           para continuar con tu compra.
         </div>
@@ -400,7 +400,7 @@ export function CheckoutPage() {
                   🎁 ¿Es un regalo?
                 </span>
                 <span className="mt-1 block text-sm text-[var(--muted)]">
-                  Envolvé el pedido, agregá un mensaje o mandalo a otra dirección.
+                  Envuelve el pedido, agrega un mensaje o mándalo a otra dirección.
                 </span>
               </span>
               <input
@@ -668,12 +668,12 @@ export function CheckoutPage() {
                   <p className="text-xs text-[var(--muted)]">
                     {redeemPoints > 0
                       ? `Usando ${Math.min(redeemPoints, maxRedeemable)} puntos — ahorrás ${formatCurrency(redeemDiscount)}.`
-                      : `Podés usar hasta ${maxRedeemable} puntos en este pedido (máximo ${loyaltySettings.maxRedemptionPercentage}% del subtotal).`}
+                      : `Puedes usar hasta ${maxRedeemable} puntos en este pedido (máximo ${loyaltySettings.maxRedemptionPercentage}% del subtotal).`}
                   </p>
                 </div>
               ) : (
                 <p className="border-t border-[var(--line)] pt-4 text-xs text-[var(--muted)]">
-                  Tenés {loyaltyAccount.balance} Patipuntos, pero todavía no podés canjearlos:{" "}
+                  Tienes {loyaltyAccount.balance} Patipuntos, pero todavía no puedes canjearlos:{" "}
                   {loyaltyAccount.redemptionBlockedReasons.join(", ")}.
                 </p>
               )
