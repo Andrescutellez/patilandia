@@ -96,7 +96,10 @@ export function OrderTrackingPage({ code }: { code: string }) {
     return null;
   }
 
-  const trackingCode = order.fulfillments.find((fulfillment) => fulfillment.trackingCode)?.trackingCode;
+  const fulfillmentWithTracking = order.fulfillments.find((fulfillment) => fulfillment.trackingCode);
+  const trackingCode = fulfillmentWithTracking?.trackingCode;
+  const trackingMethod = fulfillmentWithTracking?.method;
+  const trackingUrl = fulfillmentWithTracking?.trackingUrl;
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
@@ -125,8 +128,21 @@ export function OrderTrackingPage({ code }: { code: string }) {
 
       {trackingCode ? (
         <div className="rounded-[1.4rem] border border-[var(--brand-violet)] bg-[var(--brand-soft)] p-5">
-          <p className="text-sm font-bold text-[var(--brand-violet-deep)]">Número de guía</p>
+          {trackingMethod ? (
+            <p className="text-sm text-[var(--muted)]">Transportadora: <span className="font-bold text-[var(--ink)]">{trackingMethod}</span></p>
+          ) : null}
+          <p className="mt-1 text-sm font-bold text-[var(--brand-violet-deep)]">Número de guía</p>
           <p className="mt-1 text-lg font-black text-[var(--ink)]">{trackingCode}</p>
+          {trackingUrl ? (
+            <a
+              className={buttonStyles({ size: "sm", className: "mt-4" })}
+              href={trackingUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Rastrear envío
+            </a>
+          ) : null}
         </div>
       ) : null}
 

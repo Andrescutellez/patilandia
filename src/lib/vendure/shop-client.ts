@@ -27,6 +27,9 @@ export interface OrderFulfillment {
   state: string;
   method: string;
   trackingCode: string | null;
+  /** Optional carrier tracking-page link, set by the admin in the Dashboard's "Fulfill order"
+   *  dialog (see patilandia-fulfillment-handler.ts on the backend) — null when left blank. */
+  trackingUrl: string | null;
 }
 
 export interface OrderShippingAddress {
@@ -82,7 +85,7 @@ const ORDER_FIELDS = `
   subTotalWithTax
   shippingWithTax
   totalWithTax
-  fulfillments { state method trackingCode }
+  fulfillments { state method trackingCode customFields { trackingUrl } }
   shippingAddress { fullName streetLine1 streetLine2 city province country phoneNumber }
   customFields {
     loyaltyPointsEarned
@@ -136,7 +139,12 @@ interface RawOrder {
   subTotalWithTax: number;
   shippingWithTax: number;
   totalWithTax: number;
-  fulfillments?: Array<{ state: string; method: string; trackingCode: string | null }> | null;
+  fulfillments?: Array<{
+    state: string;
+    method: string;
+    trackingCode: string | null;
+    customFields?: { trackingUrl?: string | null } | null;
+  }> | null;
   shippingAddress?: {
     fullName?: string | null;
     streetLine1?: string | null;
@@ -189,7 +197,8 @@ function toOrderSummary(order: RawOrder): OrderSummary {
     fulfillments: (order.fulfillments ?? []).map((fulfillment) => ({
       state: fulfillment.state,
       method: fulfillment.method,
-      trackingCode: fulfillment.trackingCode
+      trackingCode: fulfillment.trackingCode,
+      trackingUrl: fulfillment.customFields?.trackingUrl ?? null
     })),
     shippingAddress: order.shippingAddress
       ? {
