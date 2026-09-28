@@ -25,14 +25,14 @@ const PET_TYPE_CARDS = [
 export function PetTypeCards() {
   return (
     <section className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-12 lg:px-8">
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+      <div className="grid grid-cols-2 gap-2 sm:gap-6">
         {PET_TYPE_CARDS.map((card) => (
           <Link
             key={card.petType}
             className="relative block aspect-[1774/887] overflow-hidden rounded-[2rem] shadow-[0_18px_45px_rgba(31,36,84,0.1)] transition hover:scale-[1.01]"
             href={card.href}
           >
-            <Image alt={card.alt} className="object-cover" fill sizes="(max-width: 640px) 100vw, 50vw" src={card.src} />
+            <Image alt={card.alt} className="object-cover" fill sizes="50vw" src={card.src} />
           </Link>
         ))}
       </div>
