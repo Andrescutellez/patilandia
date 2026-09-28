@@ -10,6 +10,8 @@ import { generateBoldCheckout, type BoldCheckoutData } from "@/lib/vendure/bold-
 import {
   CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
   getEligibleShippingMethods,
+  getMipaqueteLocations,
+  type MipaqueteLocation,
   type OrderSummary,
   type ShippingMethodOption
 } from "@/lib/vendure/shop-client";
@@ -42,6 +44,11 @@ interface AddressForm {
   province: string;
   postalCode: string;
   phoneNumber: string;
+  /** The DANE code the shopper picked from the city autocomplete below — required before Mi
+   *  Paquete can quote/create a real shipment. Cleared whenever the shopper edits the city text
+   *  without re-picking a result, so a stale code can never sneak through attached to the wrong
+   *  city name. */
+  locationCode: string;
 }
 
 const EMPTY_ADDRESS: AddressForm = {
@@ -50,13 +57,13 @@ const EMPTY_ADDRESS: AddressForm = {
   city: "",
   province: "",
   postalCode: "",
-  phoneNumber: ""
+  phoneNumber: "",
+  locationCode: ""
 };
 
 const ADDRESS_FIELDS: Array<[key: keyof AddressForm, label: string, span: string, required: boolean]> = [
   ["fullName", "Nombre completo", "sm:col-span-2", true],
   ["streetLine1", "Dirección", "sm:col-span-2", true],
-  ["city", "Ciudad", "", true],
   ["province", "Departamento", "", false],
   ["postalCode", "Código postal", "", false],
   ["phoneNumber", "Teléfono", "", false]
@@ -68,6 +75,84 @@ interface RecipientExtra {
 }
 
 const EMPTY_RECIPIENT_EXTRA: RecipientExtra = { neighborhood: "", deliveryNotes: "" };
+
+/**
+ * Replaces a free-text "Ciudad" input — Mi Paquete needs a real DANE code to quote/create a
+ * shipment, not a city name a shopper might spell three different ways. Debounced search against
+ * patilandia-mipaquete's cached /getLocations (via the mipaqueteLocations Shop API query); picking
+ * a result is the only way `locationCode` ever gets set, so a selection is always a real, valid one.
+ */
+function CityAutocomplete({
+  city,
+  locationCode,
+  onChange
+}: {
+  city: string;
+  locationCode: string;
+  onChange: (city: string, locationCode: string) => void;
+}) {
+  const [results, setResults] = useState<MipaqueteLocation[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (locationCode || city.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      getMipaqueteLocations(city.trim())
+        .then((locations) => {
+          setResults(locations);
+          setOpen(true);
+        })
+        .finally(() => setLoading(false));
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [city, locationCode]);
+
+  return (
+    <label className="relative grid gap-2">
+      <span className="text-sm font-bold text-[var(--ink)]">Ciudad</span>
+      <input
+        autoComplete="off"
+        className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+        onChange={(event) => onChange(event.target.value, "")}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        placeholder="Escribe tu ciudad…"
+        required
+        type="text"
+        value={city}
+      />
+      {locationCode ? (
+        <span className="text-xs font-semibold text-[var(--brand-violet-deep)]">✓ Ciudad confirmada</span>
+      ) : loading ? (
+        <span className="text-xs text-[var(--muted)]">Buscando…</span>
+      ) : city.trim().length >= 2 ? (
+        <span className="text-xs text-[var(--muted)]">Elige tu ciudad de la lista para poder cotizar el envío.</span>
+      ) : null}
+      {open && results.length > 0 ? (
+        <ul className="absolute top-full z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-[var(--line)] bg-white shadow-lg">
+          {results.map((location) => (
+            <li key={location.locationCode}>
+              <button
+                className="block w-full px-4 py-2 text-left text-sm hover:bg-[var(--brand-soft)]"
+                onClick={() => {
+                  onChange(`${location.locationName} - ${location.departmentOrStateName}`, location.locationCode);
+                  setOpen(false);
+                }}
+                type="button"
+              >
+                {location.locationName} <span className="text-[var(--muted)]">— {location.departmentOrStateName}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </label>
+  );
+}
 
 export function CheckoutPage() {
   const {
@@ -102,6 +187,7 @@ export function CheckoutPage() {
   const [recipientExtra, setRecipientExtra] = useState<RecipientExtra>(EMPTY_RECIPIENT_EXTRA);
 
   const [shippingMethods, setShippingMethods] = useState<ShippingMethodOption[]>([]);
+  const [isQuotingShipping, setIsQuotingShipping] = useState(false);
   const [selectedShippingMethodId, setSelectedShippingMethodId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderSummary | null>(null);
@@ -125,14 +211,58 @@ export function CheckoutPage() {
     getWhatsappSettings().then(setWhatsappSettings);
   }, []);
 
+  // Mi Paquete's checkers/calculators quote against the order's real shipping address (see
+  // patilandia-mipaquete's shipping/mipaquete-carrier.ts) — so unlike the old flat-rate methods,
+  // eligibleShippingMethods can't be fetched once on mount anymore. This sends the address to the
+  // server (setShippingAddress, harmless to call repeatedly as the shopper keeps typing) as soon as
+  // a real DANE code is picked, then re-fetches the radio list with whatever Mi Paquete actually
+  // quotes for that destination. Debounced so it doesn't fire on every keystroke.
   useEffect(() => {
-    getEligibleShippingMethods()
-      .then((methods) => {
+    if (!address.locationCode || !address.streetLine1.trim()) {
+      setShippingMethods([]);
+      return;
+    }
+    const shipToOther = isGift && giftDeliverToOther;
+    const timer = setTimeout(async () => {
+      setIsQuotingShipping(true);
+      try {
+        const addressOk = await setShippingAddress({
+          fullName: address.fullName,
+          streetLine1: address.streetLine1,
+          city: address.city,
+          province: address.province || undefined,
+          postalCode: address.postalCode || undefined,
+          phoneNumber: address.phoneNumber || undefined,
+          countryCode: "CO",
+          locationCode: address.locationCode,
+          ...(shipToOther
+            ? {
+                neighborhood: recipientExtra.neighborhood.trim() || undefined,
+                deliveryNotes: recipientExtra.deliveryNotes.trim() || undefined
+              }
+            : {})
+        });
+        if (!addressOk) return;
+        const methods = await getEligibleShippingMethods();
         setShippingMethods(methods);
-        setSelectedShippingMethodId((current) => current || methods[0]?.id || "");
-      })
-      .catch(() => setShippingMethods([]));
-  }, []);
+        setSelectedShippingMethodId((current) => (methods.some((m) => m.id === current) ? current : methods[0]?.id ?? ""));
+      } catch {
+        setShippingMethods([]);
+      } finally {
+        setIsQuotingShipping(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    address.locationCode,
+    address.streetLine1,
+    address.fullName,
+    address.city,
+    address.province,
+    address.postalCode,
+    address.phoneNumber
+  ]);
 
   useEffect(() => {
     // Uses the confirmed order email once known, falling back to whatever the Mascotas/Wishlist
@@ -363,6 +493,7 @@ export function CheckoutPage() {
         postalCode: address.postalCode || undefined,
         phoneNumber: address.phoneNumber || undefined,
         countryCode: "CO",
+        locationCode: address.locationCode || undefined,
         ...(shipToOther
           ? {
               neighborhood: recipientExtra.neighborhood.trim() || undefined,
@@ -527,6 +658,11 @@ export function CheckoutPage() {
               {isGift && giftDeliverToOther ? "Dirección del destinatario" : "Dirección de envío"}
             </h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <CityAutocomplete
+                city={address.city}
+                locationCode={address.locationCode}
+                onChange={(city, locationCode) => setAddress((current) => ({ ...current, city, locationCode }))}
+              />
               {ADDRESS_FIELDS.map(([field, label, span, required]) => (
                 <label className={`grid gap-2 ${span}`} key={field}>
                   <span className="text-sm font-bold text-[var(--ink)]">{label}</span>
@@ -578,7 +714,13 @@ export function CheckoutPage() {
             <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Método de envío</h2>
             <div className="mt-5 grid gap-3">
               {shippingMethods.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">Cargando métodos de envío disponibles…</p>
+                <p className="text-sm text-[var(--muted)]">
+                  {!address.locationCode
+                    ? "Completa tu dirección (con la ciudad confirmada) para ver los métodos de envío disponibles."
+                    : isQuotingShipping
+                      ? "Cotizando el envío…"
+                      : "No encontramos transportadoras disponibles para esta dirección. Revisa la dirección o contáctanos por WhatsApp."}
+                </p>
               ) : (
                 shippingMethods.map((method) => (
                   <label

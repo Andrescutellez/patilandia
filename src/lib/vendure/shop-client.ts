@@ -385,20 +385,43 @@ export async function setShippingAddress(input: {
    *  through this mutation automatically. */
   neighborhood?: string;
   deliveryNotes?: string;
+  /** The DANE code the shopper picked from the city autocomplete (see the checkout's city selector
+   *  and getMipaqueteLocations below) — required for patilandia-mipaquete's shipping checkers to
+   *  quote/create a real shipment. Also an Address customField. */
+  locationCode?: string;
 }): Promise<OrderSummary> {
-  const { neighborhood, deliveryNotes, ...addressInput } = input;
-  const hasCustomFields = Boolean(neighborhood || deliveryNotes);
+  const { neighborhood, deliveryNotes, locationCode, ...addressInput } = input;
+  const hasCustomFields = Boolean(neighborhood || deliveryNotes || locationCode);
   const data = await shopFetch<{ setOrderShippingAddress: RawOrder }>(
     `mutation SetOrderShippingAddress($input: CreateAddressInput!) {
       setOrderShippingAddress(input: $input) { ${ORDER_RESULT_FIELDS} }
     }`,
     {
       input: hasCustomFields
-        ? { ...addressInput, customFields: { neighborhood, deliveryNotes } }
+        ? { ...addressInput, customFields: { neighborhood, deliveryNotes, locationCode } }
         : addressInput
     }
   );
   return unwrapOrderResult(data.setOrderShippingAddress);
+}
+
+export interface MipaqueteLocation {
+  locationCode: string;
+  locationName: string;
+  departmentOrStateName: string;
+}
+
+/** Backs the checkout's city autocomplete — the DANE code it resolves is what patilandia-mipaquete
+ *  needs to quote/create a real shipment (see setShippingAddress's locationCode above). Returns an
+ *  empty list (never throws, never a fabricated result) if Mi Paquete isn't reachable/configured. */
+export async function getMipaqueteLocations(search: string): Promise<MipaqueteLocation[]> {
+  const data = await shopFetch<{ mipaqueteLocations: MipaqueteLocation[] }>(
+    `query MipaqueteLocations($search: String!) {
+      mipaqueteLocations(search: $search) { locationCode locationName departmentOrStateName }
+    }`,
+    { search }
+  );
+  return data.mipaqueteLocations;
 }
 
 export interface GiftDetailsInput {
