@@ -30,6 +30,7 @@ function buildProduct(overrides: Partial<StorefrontProduct> = {}): StorefrontPro
     theme: "dreams",
     colors: [{ name: "Lavanda", hex: "#8b73ff" }],
     sizes: ["M"],
+    weights: [],
     materials: [],
     care: [],
     highlights: [],

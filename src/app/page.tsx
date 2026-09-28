@@ -7,6 +7,7 @@ import { PetTypeCards } from "@/components/home/pet-type-cards";
 import { ProductCard } from "@/components/products/product-card";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/ui/fade-in";
+import { PawIcon } from "@/components/ui/icons";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getHomepageProducts } from "@/lib/storefront";
 
@@ -24,12 +25,13 @@ export default async function HomePage() {
           <SectionHeading
             actionHref="/tienda"
             actionLabel="Ver tienda"
-            eyebrow="Destacados"
-            title="Productos con identidad Patilandia"
+            title="Destacados"
+            titleFont="marker"
+            titleIcon={<PawIcon className="h-8 w-8 text-[var(--brand-violet-deep)] sm:h-10 sm:w-10" />}
           />
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
+          <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {featuredProducts.map((product) => (
-              <ProductCard key={product.slug} product={product} />
+              <ProductCard key={product.slug} product={product} compact />
             ))}
           </div>
         </FadeIn>

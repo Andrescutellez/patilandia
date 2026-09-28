@@ -204,4 +204,44 @@ describe("adaptVendureProduct", () => {
     expect(product.image).toContain("/images/patilandia/");
     expect(product.galleryImages).toEqual([product.image]);
   });
+
+  it("defaults weights to an empty array when no variant has a weight option group", () => {
+    const product = adaptVendureProduct(buildProduct());
+    expect(product.weights).toEqual([]);
+  });
+
+  it("dedupes weights across variants, for pet food sold in multiple bag sizes", () => {
+    const product = adaptVendureProduct(
+      buildProduct({
+        variants: [
+          buildVariant({ id: "1", options: [{ name: "3kg", group: { code: "weight" } }] }),
+          buildVariant({ id: "2", options: [{ name: "7.5kg", group: { code: "weight" } }] }),
+          buildVariant({ id: "3", options: [{ name: "3kg", group: { code: "weight" } }] })
+        ]
+      })
+    );
+    expect(product.weights.sort()).toEqual(["3kg", "7.5kg"]);
+    expect(product.variants).toEqual([
+      { id: "1", size: undefined, colorName: undefined, weight: "3kg" },
+      { id: "2", size: undefined, colorName: undefined, weight: "7.5kg" },
+      { id: "3", size: undefined, colorName: undefined, weight: "3kg" }
+    ]);
+  });
+
+  it("defaults brand to undefined when there is no brand facet value", () => {
+    const product = adaptVendureProduct(buildProduct());
+    expect(product.brand).toBeUndefined();
+  });
+
+  it("reads brand from the brand facet value's name", () => {
+    const product = adaptVendureProduct(
+      buildProduct({
+        facetValues: [
+          { code: "camitas", name: "Camitas", facet: { code: "category" } },
+          { code: "hills", name: "Hills", facet: { code: "brand" } }
+        ]
+      })
+    );
+    expect(product.brand).toBe("Hills");
+  });
 });

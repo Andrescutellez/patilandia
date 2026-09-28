@@ -22,6 +22,7 @@ function buildProduct(overrides: Partial<StorefrontProduct> & Pick<StorefrontPro
     theme: "dreams",
     colors: [],
     sizes: [],
+    weights: [],
     materials: [],
     care: [],
     highlights: [],

@@ -20,18 +20,31 @@ const themeMap: Record<StorefrontProduct["theme"], string> = {
   dreams: "from-[#dde5ff] via-[#fbfaff] to-[#f2ecff]"
 };
 
-export function ProductCard({ product }: { product: StorefrontProduct }) {
+export function ProductCard({
+  product,
+  compact = false
+}: {
+  product: StorefrontProduct;
+  /** Smaller card for the home page's "Destacados" carousel — no description/rating row, icon-only
+   *  add-to-cart, fixed narrow width. The full card (used by /tienda, wishlist, etc.) is untouched. */
+  compact?: boolean;
+}) {
   const router = useRouter();
   const { addToCart, isWishlisted, toggleWishlist } = useStore();
   const discount = percentageOff(product.price, product.compareAtPrice);
   const wishlisted = isWishlisted(product.id);
   const [addError, setAddError] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  // Defaults to the first value of each dimension, same as the full card always did — only the
+  // compact card's picker below ever changes these away from that default.
+  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
+  const [selectedWeight, setSelectedWeight] = useState(product.weights[0]);
 
   async function handleAdd(navigateToCheckout: boolean) {
     setIsAdding(true);
     setAddError(false);
-    const ok = await addToCart(product, { size: product.sizes[0], color: product.colors[0] });
+    const ok = await addToCart(product, { size: selectedSize, color: selectedColor, weight: selectedWeight });
     setIsAdding(false);
     if (!ok) {
       setAddError(true);
@@ -40,6 +53,107 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
     if (navigateToCheckout) {
       router.push("/checkout");
     }
+  }
+
+  if (compact) {
+    return (
+      <article className="w-40 shrink-0 overflow-hidden rounded-[1.4rem] border border-white/60 bg-white shadow-[0_14px_30px_rgba(33,38,84,0.08)] transition hover:-translate-y-1 sm:w-48 lg:w-56">
+        <Link className={`relative block aspect-square overflow-hidden bg-gradient-to-br ${themeMap[product.theme]}`} href={`/producto/${product.slug}`}>
+          <Image alt={product.name} className="h-full w-full object-cover" fill sizes="(max-width: 640px) 160px, (max-width: 1024px) 192px, 224px" src={product.image} />
+          {product.badge ? (
+            <span className="absolute left-1.5 top-1.5 rounded-full bg-[var(--brand-gold)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.08em] text-[var(--ink)]">
+              {product.badge}
+            </span>
+          ) : null}
+        </Link>
+        <div className="space-y-1.5 p-2 sm:p-3">
+          <div>
+            {product.brand ? (
+              <p className="truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{product.brand}</p>
+            ) : null}
+            <Link className="block truncate font-display text-xs text-[var(--ink)] sm:text-sm" href={`/producto/${product.slug}`}>
+              {product.name}
+            </Link>
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-black text-[var(--brand-violet-deep)] sm:text-base">{formatCurrency(product.price)}</p>
+              {discount ? (
+                <span className="rounded-full bg-[var(--brand-gold)] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink)]">
+                  -{discount}%
+                </span>
+              ) : null}
+            </div>
+            {product.compareAtPrice ? (
+              <p className="text-[10px] text-[var(--muted)] line-through">{formatCurrency(product.compareAtPrice)}</p>
+            ) : null}
+          </div>
+
+          {product.weights.length > 1 ? (
+            <div className="flex flex-wrap gap-1">
+              {product.weights.map((weight) => (
+                <button
+                  key={weight}
+                  className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold transition ${
+                    selectedWeight === weight
+                      ? "border-[var(--brand-violet)] bg-[var(--brand-violet)] text-white"
+                      : "border-[var(--line)] text-[var(--ink)]"
+                  }`}
+                  onClick={() => setSelectedWeight(weight)}
+                  type="button"
+                >
+                  {weight}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {product.colors.length > 1 ? (
+            <div className="flex flex-wrap gap-1">
+              {product.colors.map((color) => (
+                <button
+                  key={color.name}
+                  aria-label={color.name}
+                  className={`h-4 w-4 rounded-full border-2 ${
+                    selectedColor?.name === color.name ? "border-[var(--brand-violet)]" : "border-white"
+                  }`}
+                  onClick={() => setSelectedColor(color)}
+                  style={{ backgroundColor: color.hex }}
+                  type="button"
+                />
+              ))}
+            </div>
+          ) : null}
+          {product.sizes.length > 1 ? (
+            <div className="flex flex-wrap gap-1">
+              {product.sizes.map((size) => (
+                <button
+                  key={size}
+                  className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold transition ${
+                    selectedSize === size
+                      ? "border-[var(--brand-violet)] bg-[var(--brand-violet)] text-white"
+                      : "border-[var(--line)] text-[var(--ink)]"
+                  }`}
+                  onClick={() => setSelectedSize(size)}
+                  type="button"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="flex gap-1">
+            <Button aria-label="Agregar al carrito" className="flex-1" disabled={isAdding} onClick={() => handleAdd(false)} size="xs" type="button">
+              <CartIcon className="h-3.5 w-3.5" />
+            </Button>
+            <Button className="flex-1" disabled={isAdding} onClick={() => handleAdd(true)} size="xs" type="button" variant="secondary">
+              Comprar
+            </Button>
+          </div>
+          {addError ? <p className="text-center text-[9px] font-semibold text-red-500">No se pudo agregar</p> : null}
+        </div>
+      </article>
+    );
   }
 
   return (

@@ -162,6 +162,7 @@ function createProduct(
       { name: "Dorado suave", hex: "#f2c76f" }
     ],
     sizes: ["S", "M", "L", "XL"],
+    weights: [],
     materials: ["Microfibra premium", "Relleno siliconado", "Base antideslizante"],
     care: ["Lavar a mano", "Secar extendida", "No usar blanqueador"],
     highlights: defaultHighlights,

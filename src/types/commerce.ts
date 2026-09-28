@@ -44,6 +44,9 @@ export interface StorefrontVariantRef {
   /** Undefined when this product has no "color" option group in Vendure (e.g. pet food that only
    *  varies by weight) — see toVariantRefs in adapters.ts. */
   colorName?: string;
+  /** Undefined when this product has no "weight" option group in Vendure — free-form label (e.g.
+   *  "1kg", "3kg", "7.5kg"), unlike size which is a fixed S/M/L/XL enum. See toVariantRefs. */
+  weight?: string;
 }
 
 export interface StorefrontProduct {
@@ -73,6 +76,11 @@ export interface StorefrontProduct {
   theme: CollectionTheme;
   colors: ProductColor[];
   sizes: ProductSize[];
+  /** Values of Vendure's "weight" option group (e.g. ["1kg", "3kg", "7.5kg"]) — empty when the
+   *  product doesn't sell in multiple weight-based SKUs (most products). See dedupeWeights. */
+  weights: string[];
+  /** Facet value name under Vendure's "brand" Facet (e.g. "Hills") — undefined if not tagged. */
+  brand?: string;
   materials: string[];
   care: string[];
   highlights: ProductFeature[];
@@ -106,6 +114,8 @@ export interface CartLineItem {
   quantity: number;
   selectedSize: ProductSize;
   selectedColor: ProductColor;
+  /** Undefined when the product has no "weight" option group — see StorefrontVariantRef.weight. */
+  selectedWeight?: string;
   /** The answers the shopper gave for this line's personalization, if any — see
    *  ProductPersonalization. Undefined for a line that isn't personalized. */
   personalization?: Array<{ fieldId: string; label: string; value: string }>;

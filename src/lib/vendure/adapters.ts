@@ -94,6 +94,7 @@ function toVariantRefs(variants: VendureProductVariant[]): StorefrontVariantRef[
     id: variant.id,
     size: variant.options.find((o) => o.group.code === "size")?.name as ProductSize | undefined,
     colorName: variant.options.find((o) => o.group.code === "color")?.name,
+    weight: variant.options.find((o) => o.group.code === "weight")?.name,
   }));
 }
 
@@ -114,6 +115,17 @@ function dedupeSizes(variants: VendureProductVariant[]): ProductSize[] {
 // filter, which is all the storefront ever needed from this field.
 function computeStock(variants: VendureProductVariant[]): number {
   return variants.some((variant) => variant.stockLevel !== "OUT_OF_STOCK") ? 10 : 0;
+}
+
+function dedupeWeights(variants: VendureProductVariant[]): string[] {
+  const weights = new Set<string>();
+  for (const variant of variants) {
+    const option = variant.options.find((o) => o.group.code === "weight");
+    if (option) {
+      weights.add(option.name);
+    }
+  }
+  return [...weights];
 }
 
 function dedupeColors(variants: VendureProductVariant[]): ProductColor[] {
@@ -158,6 +170,8 @@ export function adaptVendureProduct(record: VendureProduct): StorefrontProduct {
     theme: readTheme(themeSlug),
     colors: dedupeColors(record.variants),
     sizes: dedupeSizes(record.variants),
+    weights: dedupeWeights(record.variants),
+    brand: facetValueName(record, "brand"),
     materials: customFields.materials ?? [],
     care: customFields.care ?? [],
     highlights: customFields.highlights ?? [],
@@ -216,6 +230,7 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
   const themeSlug = facetValueCode(product, "theme");
   const size = variant.options.find((o) => o.group.code === "size")?.name ?? "M";
   const color = variant.options.find((o) => o.group.code === "color");
+  const weight = variant.options.find((o) => o.group.code === "weight")?.name;
   const image = variant.featuredAsset?.preview ?? product.featuredAsset?.preview ?? FALLBACK_IMAGE;
 
   const product_: StorefrontProduct = {
@@ -237,6 +252,7 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
     theme: readTheme(themeSlug),
     colors: [],
     sizes: [],
+    weights: [],
     materials: [],
     care: [],
     highlights: [],
@@ -265,6 +281,7 @@ export function adaptVendureOrderLine(line: VendureOrderLine): CartLineItem {
     quantity: line.quantity,
     selectedSize: size as ProductSize,
     selectedColor: { name: color?.name ?? "", hex: color?.customFields?.hex ?? "#8b73ff" },
+    selectedWeight: weight,
     personalization,
     personalizationSurcharge: personalizationSurcharge > 0 ? personalizationSurcharge : undefined
   };
