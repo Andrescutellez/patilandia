@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Button, buttonStyles } from "@/components/ui/button";
+import { buttonStyles } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { QuantitySelector } from "@/components/ui/quantity-selector";
 import { getShippingPreview } from "@/lib/shipping";
@@ -150,9 +150,9 @@ export function CartPage() {
           <Link className={buttonStyles({ size: "lg", className: "mt-8 w-full" })} href="/checkout">
             Ir a checkout
           </Link>
-          <Button className="mt-3 w-full" type="button" variant="secondary">
+          <Link className={buttonStyles({ size: "lg", variant: "secondary", className: "mt-3 w-full" })} href="/tienda">
             Seguir comprando
-          </Button>
+          </Link>
           {whatsappSettings ? (
             <a
               className="mt-3 flex w-full items-center justify-center gap-2 text-sm font-bold text-[var(--brand-violet-deep)]"

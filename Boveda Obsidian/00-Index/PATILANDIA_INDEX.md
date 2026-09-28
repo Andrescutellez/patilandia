@@ -40,6 +40,7 @@ aliases:
 | [[Entorno de Desarrollo Local]] | Cómo levantar Medusa + Postgres + storefront, credenciales dev |
 | [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] | Por qué no se puede re-temear el admin nativo; roadmap de 7 fases para extensiones propias (mascotas, proveedores, envío por peso, fidelización...) |
 | [[Shipping — Arquitectura de Envíos]] | Por qué el envío no es un costo fijo, qué falta conectar |
+| [[Integración mipaquete.com — API v2]] | Referencia completa de la API de mipaquete (transportadora) para la futura integración de envío real — documentado, no construido |
 
 ### Design System
 

@@ -60,4 +60,6 @@ El brief pide que la arquitectura permita calcular después el envío según:
 
 Cuando se conecte fulfillment real (probablemente vía Medusa Fulfillment + un proveedor de cotización colombiano), el punto de reemplazo es el cuerpo de `getShippingPreview` — su firma (`items: CartLineItem[]` → `ShippingPreview`) puede mantenerse o evolucionar a async si la cotización requiere una llamada de red, pero los call sites (`CartPage`, `CheckoutPage`) deberían necesitar cambios mínimos.
 
+> [!note] Actualización 2026-09-27 — nota histórica: este párrafo menciona "Medusa Fulfillment", ya superado por la migración a Vendure. El candidato concreto para "Transportadora" es **mipaquete.com** (agregador logístico colombiano) — ver [[Integración mipaquete.com — API v2]], con toda la referencia de endpoints, quirks y flujo de integración ya documentada, lista para cuando se decida construir el plugin real. Ese documento reemplaza este párrafo como fuente de verdad para el "cómo", no solo el "qué falta".
+
 Tags: #arquitectura #shipping #envios
