@@ -61,13 +61,23 @@ const EMPTY_ADDRESS: AddressForm = {
   locationCode: ""
 };
 
-const ADDRESS_FIELDS: Array<[key: keyof AddressForm, label: string, span: string, required: boolean]> = [
+const ADDRESS_FIELDS_TOP: Array<[key: keyof AddressForm, label: string, span: string, required: boolean]> = [
   ["fullName", "Nombre completo", "sm:col-span-2", true],
-  ["streetLine1", "Dirección", "sm:col-span-2", true],
+  ["streetLine1", "Dirección", "sm:col-span-2", true]
+];
+
+const ADDRESS_FIELDS_BOTTOM: Array<[key: keyof AddressForm, label: string, span: string, required: boolean]> = [
   ["province", "Departamento", "", false],
   ["postalCode", "Código postal", "", false],
   ["phoneNumber", "Teléfono", "", false]
 ];
+
+function formatShippingTime(minutes: number): string {
+  const hours = minutes / 60;
+  if (hours < 24) return `Entrega en ~${Math.max(1, Math.round(hours))} h`;
+  const days = Math.round(hours / 24);
+  return `Entrega en ~${days} día${days === 1 ? "" : "s"}`;
+}
 
 interface RecipientExtra {
   neighborhood: string;
@@ -658,12 +668,25 @@ export function CheckoutPage() {
               {isGift && giftDeliverToOther ? "Dirección del destinatario" : "Dirección de envío"}
             </h2>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {ADDRESS_FIELDS_TOP.map(([field, label, span, required]) => (
+                <label className={`grid gap-2 ${span}`} key={field}>
+                  <span className="text-sm font-bold text-[var(--ink)]">{label}</span>
+                  <input
+                    className="h-12 rounded-2xl border border-[var(--line)] px-4 text-sm outline-none"
+                    onChange={(event) => setAddress((current) => ({ ...current, [field]: event.target.value }))}
+                    placeholder={label}
+                    required={required}
+                    type="text"
+                    value={address[field]}
+                  />
+                </label>
+              ))}
               <CityAutocomplete
                 city={address.city}
                 locationCode={address.locationCode}
                 onChange={(city, locationCode) => setAddress((current) => ({ ...current, city, locationCode }))}
               />
-              {ADDRESS_FIELDS.map(([field, label, span, required]) => (
+              {ADDRESS_FIELDS_BOTTOM.map(([field, label, span, required]) => (
                 <label className={`grid gap-2 ${span}`} key={field}>
                   <span className="text-sm font-bold text-[var(--ink)]">{label}</span>
                   <input
@@ -738,7 +761,14 @@ export function CheckoutPage() {
                         onChange={() => setSelectedShippingMethodId(method.id)}
                         type="radio"
                       />
-                      {method.name}
+                      <span>
+                        <span className="block">{method.name}</span>
+                        {method.shippingTimeMinutes ? (
+                          <span className="block text-xs font-normal text-[var(--muted)]">
+                            {formatShippingTime(method.shippingTimeMinutes)}
+                          </span>
+                        ) : null}
+                      </span>
                     </span>
                     <span className="font-bold text-[var(--brand-violet-deep)]">
                       {formatCurrency(method.priceWithTax)}

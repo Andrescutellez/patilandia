@@ -21,6 +21,7 @@ export interface ShippingMethodOption {
   id: string;
   name: string;
   priceWithTax: number;
+  shippingTimeMinutes: number | null;
 }
 
 export interface OrderFulfillment {
@@ -362,12 +363,18 @@ export async function getMyOrders(): Promise<OrderSummary[]> {
 
 export async function getEligibleShippingMethods(): Promise<ShippingMethodOption[]> {
   const data = await shopFetch<{
-    eligibleShippingMethods: Array<{ id: string; name: string; priceWithTax: number }>;
-  }>(`query EligibleShippingMethods { eligibleShippingMethods { id name priceWithTax } }`);
+    eligibleShippingMethods: Array<{
+      id: string;
+      name: string;
+      priceWithTax: number;
+      metadata: { shippingTimeMinutes?: number } | null;
+    }>;
+  }>(`query EligibleShippingMethods { eligibleShippingMethods { id name priceWithTax metadata } }`);
   return data.eligibleShippingMethods.map((method) => ({
     id: method.id,
     name: method.name,
-    priceWithTax: method.priceWithTax / VENDURE_MONEY_FACTOR
+    priceWithTax: method.priceWithTax / VENDURE_MONEY_FACTOR,
+    shippingTimeMinutes: method.metadata?.shippingTimeMinutes ?? null
   }));
 }
 
