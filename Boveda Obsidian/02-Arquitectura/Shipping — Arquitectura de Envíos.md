@@ -10,6 +10,9 @@ status: activo
 
 # Shipping — Arquitectura de Envíos
 
+> [!success] Actualizado 2026-09-27/28 — la regla de abajo ya se cumple
+> Esta nota describe el estado histórico (previo a Mi Paquete). El sistema real de envíos hoy cotiza contra la API v2 de Mi Paquete (peso/dimensiones reales, destino real, sin tarifa fija) — ver [[Integración mipaquete.com — API v2]] para la referencia de la API y [[Decisiones y Razonamiento]] (entrada 2026-09-27/28) para la arquitectura implementada y los bugs encontrados. El contenido de abajo queda como registro histórico de por qué se necesitaba, no como el diseño vigente.
+
 > [!warning] Regla del brief que no debe romperse
 > "El sistema de shipping NO debe asumir un costo fijo." Patilandia venderá productos livianos (accesorios) junto a productos pesados (arena, alimento, sacos grandes). Cualquier cambio a esta lógica debe preservar esa flexibilidad — ver [[Patilandia — Brief Original]] sección 10.
 

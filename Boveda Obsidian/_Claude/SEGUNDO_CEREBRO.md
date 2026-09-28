@@ -39,7 +39,7 @@ Al iniciar una conversación, leer en orden:
 → [[Patilandia — Brief Original]] · [[Identidad de Marca]]
 
 ### Arquitectura
-→ [[Arquitectura Técnica]] · [[Integración Medusa]] · [[Entorno de Desarrollo Local]] · [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] · [[Shipping — Arquitectura de Envíos]]
+→ [[Arquitectura Técnica]] · [[Integración Medusa]] · [[Entorno de Desarrollo Local]] · [[Patilandia sobre Medusa Admin — Diagnóstico y Roadmap]] · [[Shipping — Arquitectura de Envíos]] · [[Integración mipaquete.com — API v2]]
 
 ### Design System
 → [[Design System]]
@@ -51,6 +51,14 @@ Al iniciar una conversación, leer en orden:
 → [[Mapa de Rutas y Componentes]]
 
 ---
+
+## Estado rápido al 2026-09-27/28 — Envíos reales con Mi Paquete, undécimo plugin propio, reemplazo total de las tarifas fijas
+
+Las 2 tarifas fijas de envío ($12.000/$25.000, sin relación con destino/peso real) se reemplazaron por cotización, creación de envío y tracking reales contra la API v2 de Mi Paquete (agregador logístico colombiano) — justo la regla que [[Shipping — Arquitectura de Envíos]] pedía desde el brief original y nunca se había cumplido. Plugin nuevo `patilandia-mipaquete`: un checker/calculator por transportadora real (Mi Paquete devuelve TCC, Servientrega, Coordinadora, Envía, Inter Rapidísimo — se muestran todas al cliente), más un toggle de "envío propio en Bogotá" desde el Dashboard (apagado por defecto). El envío real en Mi Paquete se crea recién cuando el pedido está genuinamente pagado (mismo criterio `isOrderPlacedTransition` de los correos transaccionales), nunca durante el checkout, y se materializa como un `Fulfillment` real de Vendure para no duplicar nada del pipeline de correos/tracking ya construido.
+
+Se encontraron y corrigieron 5 bugs reales, dos de ellos con plata real en juego: `configure-checkout.ts` fallaba en el VPS por un orden de imports que hacía leer las env vars de Mi Paquete antes de que `dotenv` las cargara; el storefront de producción se quedaba pegado en "Cargando métodos de envío…" para siempre porque nunca se le hizo deploy (el backend sí, el storefront no — detectado comparando el commit real del servidor); la búsqueda de ciudad no ignoraba tildes; **los pedidos contraentrega no le pedían a Mi Paquete cobrar al entregar** (el mensajero entregaba gratis, Patilandia perdía el pedido completo — corregido con `paymentType`/`valueCollection` reales según el método de pago); y la comisión de recaudo que Mi Paquete cobra de más por contraentrega no se reflejaba en el precio — a pedido explícito del usuario, ahora se traslada al cliente (requirió reordenar el checkout: pago antes que envío). Dos incidentes de seguridad reales (contraseña y API key pegadas en el chat) fueron detectados y contenidos antes de cualquier commit — la contraseña de Mi Paquete **sigue pendiente de rotar**.
+
+Verificado contra la cuenta real de producción de Mi Paquete (no sandbox — el endpoint documentado como default no aceptaba las credenciales reales): 5 transportadoras reales trayendo `ShippingMethod`s reales, las 2 tarifas fijas retiradas solo después de confirmar que las reales funcionaban, webhooks de guía/estado registrados contra el dominio público real del backend, y una cotización real de punta a punta en el checkout de producción. `tsc --noEmit` limpio y 36/36 tests en cada commit, ambos repos. Detalle técnico completo (los 5 bugs, las decisiones de empaque/comisión, los 2 incidentes de seguridad) en [[Decisiones y Razonamiento]] y lo que queda pendiente (rotar la contraseña, completar peso/dimensiones reales del catálogo, primer pedido real de punta a punta) en [[Pendientes Claude]].
 
 ## Estado rápido al 2026-09-14 (noche) — Proveedores y Órdenes de Compra (abastecimiento), décimo plugin propio, MVP sin ERP
 

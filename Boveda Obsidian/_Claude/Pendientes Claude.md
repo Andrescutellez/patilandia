@@ -37,6 +37,17 @@ Decisión del usuario: reemplazar Medusa por Vendure como motor ecommerce, mante
 
 *(ninguno abierto — ver Completados)*
 
+## Envíos con Mi Paquete (2026-09-27/28) — implementado, queda por cerrar
+
+Integración completa reemplazando las tarifas fijas — ver [[Decisiones y Razonamiento]] (entrada 2026-09-27/28) para el detalle técnico y los 5 bugs ya corregidos. Lo que sigue abierto:
+
+- [ ] **Urgente — rotar la contraseña de la cuenta de Mi Paquete.** Quedó expuesta en texto plano en el chat de esta sesión al diagnosticar un error de login. No es un problema de código, es una acción manual del usuario en app.mipaquete.com.
+- [ ] **Completar peso/largo/ancho/alto reales del catálogo existente.** Se les puso un default temporal para no bloquear nada — mientras un producto siga con ese default, su cotización de Mi Paquete sale con un paquete incorrecto. El Dashboard (menú "Mi Paquete") lista cuáles faltan por completar de verdad.
+- [ ] **Ningún pedido real (no de prueba) ha pasado todavía por el flujo completo pago → creación de envío en Mi Paquete → webhook de guía → Fulfillment.** La cotización sí se probó en producción; falta confirmar `createSending`/webhooks con un pedido real pagado.
+- [ ] **Activar (o no) "envío propio Bogotá" desde el Dashboard** — existe y funciona, pero queda apagado por defecto a propósito; es una decisión del usuario, no algo que deba prenderse solo.
+- [ ] **La comisión de recaudo por contraentrega ya se traslada al cliente en las transportadoras de Mi Paquete — pero no en "envío propio Bogotá"**, que no pasa por Mi Paquete (su costo es 100% configurado a mano). Si en algún momento Bogotá propio también permite contraentrega, revisar si necesita su propio ajuste de precio — no se tocó porque no se planteó como problema.
+- [ ] Confirmar con soporte de Mi Paquete si `https://api-v2.mpr.mipaquete.com` es realmente la URL base de producción "oficial" — se confirmó empíricamente (acepta las credenciales reales), pero no está documentada como tal por Mi Paquete.
+
 ## Despliegue — migración al VPS definitivo (cuando este VPS de staging expire, ~2026-10-06)
 
 Patilandia quedó desplegado el 2026-09-12 en un VPS de GCP **compartido con Argus, temporal** (le quedaban ~24 días desde esa fecha). Cuando se monte en el VPS definitivo, reproducir la arquitectura completa (detalle paso a paso en [[Decisiones y Razonamiento]], 2026-09-12) y además cerrar el endurecimiento que se dejó pendiente a propósito por no ser bloqueante en staging:

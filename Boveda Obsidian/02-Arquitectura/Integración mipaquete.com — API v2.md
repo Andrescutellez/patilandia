@@ -5,14 +5,13 @@ tags:
   - arquitectura
   - shipping
   - envios
-  - integracion-futura
-status: pendiente
+status: activo
 ---
 
 # Integración API mipaquete.com v2 — Node.js + Axios
 
-> [!info] Estado: documentado, no construido
-> Referencia técnica completa para cuando se decida integrar envío real con transportadora — ver [[Shipping — Arquitectura de Envíos]] (el "Transportadora ❌" de esa nota) y [[Pendientes Claude]]. Nada de esto está implementado en `patilandia-vendure` todavía; los snippets de la sección 9 son Node.js/Express genérico, no adaptados a este proyecto (Vendure + TypeScript) — al construirlo, lo natural es un plugin propio (`patilandia-shipping` o similar), siguiendo el mismo molde que los demás plugins de Patilandia.
+> [!success] Estado: implementado (2026-09-27/28)
+> Construido como el plugin propio `patilandia-mipaquete` — ver [[Decisiones y Razonamiento]] (entrada 2026-09-27/28) para la arquitectura real, los bugs encontrados/corregidos, y [[Pendientes Claude]] para lo que sigue abierto. Esta nota queda como la referencia técnica de la API en sí (endpoints, campos, quirks documentados) — sigue siendo el documento a consultar para cualquier cambio futuro sobre la integración.
 
 > Documento de referencia para Claude Code. Fuente: https://api.documentacion.mipaquete.com/ (documentación Postman oficial, revisada el 2026-09-27).
 > Objetivo: implementar un cliente Node.js con **axios** que cubra todos los endpoints de la API v2 de mipaquete.com (cotizar, crear envíos, rastrear, cancelar, ciudades DANE, usuarios, direcciones y webhooks).
