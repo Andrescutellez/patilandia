@@ -452,6 +452,21 @@ export async function setOrderCustomFields(input: GiftDetailsInput): Promise<Ord
   return unwrapOrderResult(data.setOrderCustomFields);
 }
 
+/** Same native setOrderCustomFields mutation as above (a separate wrapper since it's an unrelated
+ *  concern from gift details) — must be saved on the order BEFORE eligibleShippingMethods is
+ *  queried, since mipaquete-carrier's calculator reads it to add Mi Paquete's collection commission
+ *  to the shipping price for cash-on-delivery orders. Partial customFields update: leaves every
+ *  other customField (gift details, etc.) untouched. */
+export async function setPaymentMethodIntent(paymentMethodIntent: string): Promise<OrderSummary> {
+  const data = await shopFetch<{ setOrderCustomFields: RawOrder }>(
+    `mutation SetPaymentMethodIntent($input: UpdateOrderInput!) {
+      setOrderCustomFields(input: $input) { ${ORDER_RESULT_FIELDS} }
+    }`,
+    { input: { customFields: { paymentMethodIntent } } }
+  );
+  return unwrapOrderResult(data.setOrderCustomFields);
+}
+
 export async function setShippingMethod(shippingMethodId: string): Promise<OrderSummary> {
   const data = await shopFetch<{ setOrderShippingMethod: RawOrder }>(
     `mutation SetOrderShippingMethod($id: [ID!]!) {

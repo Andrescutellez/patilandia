@@ -11,6 +11,7 @@ import {
   CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
   getEligibleShippingMethods,
   getMipaqueteLocations,
+  setPaymentMethodIntent,
   type MipaqueteLocation,
   type OrderSummary,
   type ShippingMethodOption
@@ -236,6 +237,10 @@ export function CheckoutPage() {
     const timer = setTimeout(async () => {
       setIsQuotingShipping(true);
       try {
+        // Must resolve before the address/quote calls below — mipaquete-carrier's calculator reads
+        // this off the order to decide whether to add Mi Paquete's cash-on-delivery collection
+        // commission to the shipping price it returns.
+        await setPaymentMethodIntent(paymentMethod);
         const addressOk = await setShippingAddress({
           fullName: address.fullName,
           streetLine1: address.streetLine1,
@@ -271,7 +276,8 @@ export function CheckoutPage() {
     address.city,
     address.province,
     address.postalCode,
-    address.phoneNumber
+    address.phoneNumber,
+    paymentMethod
   ]);
 
   useEffect(() => {
@@ -493,6 +499,11 @@ export function CheckoutPage() {
         });
         if (!giftOk) return;
       }
+
+      // Closes a race with the debounced effect above: if the shopper changed payment method and
+      // hit submit within its 600ms window, the order's paymentMethodIntent could still be stale
+      // when setShippingMethod below re-prices the shipping line — this guarantees it's current.
+      await setPaymentMethodIntent(paymentMethod);
 
       const shipToOther = isGift && giftDeliverToOther;
       const addressOk = await setShippingAddress({
@@ -734,6 +745,49 @@ export function CheckoutPage() {
           </div>
 
           <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
+            <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Método de pago</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Elígelo antes del envío: si pagas contraentrega, el precio del envío puede ser distinto.
+            </p>
+            <div className="mt-5 grid gap-3">
+              {(
+                [
+                  ["bold", "Bold (tarjeta, PSE, Nequi)", "Te lleva a la pasarela de Bold para completar el pago."],
+                  [
+                    CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
+                    "Pago contraentrega",
+                    "Pagás en efectivo cuando recibís tu pedido."
+                  ]
+                ] as const
+              ).map(([value, label, description]) => (
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${
+                    paymentMethod === value ? "border-[var(--brand-violet)] bg-[var(--brand-soft)]" : "border-[var(--line)]"
+                  }`}
+                  key={value}
+                >
+                  <input
+                    checked={paymentMethod === value}
+                    className="mt-1"
+                    name="paymentMethod"
+                    onChange={() => {
+                      setPaymentMethod(value);
+                      setBoldCheckout(null);
+                      setBoldError(null);
+                    }}
+                    type="radio"
+                  />
+                  <span>
+                    <span className="block font-semibold text-[var(--ink)]">{label}</span>
+                    <span className="text-[var(--muted)]">{description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {boldError ? <p className="mt-4 text-sm font-semibold text-red-500">{boldError}</p> : null}
+          </div>
+
+          <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
             <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Método de envío</h2>
             <div className="mt-5 grid gap-3">
               {shippingMethods.length === 0 ? (
@@ -777,46 +831,6 @@ export function CheckoutPage() {
                 ))
               )}
             </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-white/60 bg-white/84 p-6 shadow-[0_20px_50px_rgba(31,36,84,0.08)]">
-            <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Método de pago</h2>
-            <div className="mt-5 grid gap-3">
-              {(
-                [
-                  ["bold", "Bold (tarjeta, PSE, Nequi)", "Te lleva a la pasarela de Bold para completar el pago."],
-                  [
-                    CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
-                    "Pago contraentrega",
-                    "Pagás en efectivo cuando recibís tu pedido."
-                  ]
-                ] as const
-              ).map(([value, label, description]) => (
-                <label
-                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm ${
-                    paymentMethod === value ? "border-[var(--brand-violet)] bg-[var(--brand-soft)]" : "border-[var(--line)]"
-                  }`}
-                  key={value}
-                >
-                  <input
-                    checked={paymentMethod === value}
-                    className="mt-1"
-                    name="paymentMethod"
-                    onChange={() => {
-                      setPaymentMethod(value);
-                      setBoldCheckout(null);
-                      setBoldError(null);
-                    }}
-                    type="radio"
-                  />
-                  <span>
-                    <span className="block font-semibold text-[var(--ink)]">{label}</span>
-                    <span className="text-[var(--muted)]">{description}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            {boldError ? <p className="mt-4 text-sm font-semibold text-red-500">{boldError}</p> : null}
           </div>
         </section>
 
