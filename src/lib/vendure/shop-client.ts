@@ -22,6 +22,9 @@ export interface ShippingMethodOption {
   name: string;
   priceWithTax: number;
   shippingTimeMinutes: number | null;
+  /** True for patilandia-mipaquete's "envío propio Bogotá" method — lets the checkout's
+   *  free-shipping progress bar switch to Bogotá's own threshold instead of the general one. */
+  isBogotaOwnShipping: boolean;
 }
 
 export interface OrderFulfillment {
@@ -367,15 +370,55 @@ export async function getEligibleShippingMethods(): Promise<ShippingMethodOption
       id: string;
       name: string;
       priceWithTax: number;
-      metadata: { shippingTimeMinutes?: number } | null;
+      metadata: { shippingTimeMinutes?: number; isBogotaOwnShipping?: boolean } | null;
     }>;
   }>(`query EligibleShippingMethods { eligibleShippingMethods { id name priceWithTax metadata } }`);
   return data.eligibleShippingMethods.map((method) => ({
     id: method.id,
     name: method.name,
     priceWithTax: method.priceWithTax / VENDURE_MONEY_FACTOR,
-    shippingTimeMinutes: method.metadata?.shippingTimeMinutes ?? null
+    shippingTimeMinutes: method.metadata?.shippingTimeMinutes ?? null,
+    isBogotaOwnShipping: method.metadata?.isBogotaOwnShipping ?? false
   }));
+}
+
+export interface FreeShippingSettings {
+  generalEnabled: boolean;
+  /** Pesos, not minor units — already divided by VENDURE_MONEY_FACTOR, same convention as every
+   *  other money field this file returns (OrderSummary.subtotal, ShippingMethodOption.priceWithTax…). */
+  generalThreshold: number;
+  bogotaEnabled: boolean;
+  bogotaThreshold: number;
+}
+
+/** Backs the checkout's "te faltan $X para envío gratis" progress bar — see
+ *  patilandia-mipaquete's getFreeShippingProgressSettings for what each field means. Returns
+ *  everything disabled (never throws) if Mi Paquete's Shop API is unreachable, same "checkout must
+ *  keep working" rule as getMipaqueteLocations. */
+export async function getMipaqueteFreeShippingSettings(): Promise<FreeShippingSettings> {
+  try {
+    const data = await shopFetch<{
+      mipaqueteFreeShippingSettings: {
+        generalEnabled: boolean;
+        generalThresholdMinorUnits: number;
+        bogotaEnabled: boolean;
+        bogotaThresholdMinorUnits: number;
+      };
+    }>(
+      `query MipaqueteFreeShippingSettings {
+        mipaqueteFreeShippingSettings { generalEnabled generalThresholdMinorUnits bogotaEnabled bogotaThresholdMinorUnits }
+      }`
+    );
+    const settings = data.mipaqueteFreeShippingSettings;
+    return {
+      generalEnabled: settings.generalEnabled,
+      generalThreshold: settings.generalThresholdMinorUnits / VENDURE_MONEY_FACTOR,
+      bogotaEnabled: settings.bogotaEnabled,
+      bogotaThreshold: settings.bogotaThresholdMinorUnits / VENDURE_MONEY_FACTOR
+    };
+  } catch {
+    return { generalEnabled: false, generalThreshold: 0, bogotaEnabled: false, bogotaThreshold: 0 };
+  }
 }
 
 export async function setShippingAddress(input: {

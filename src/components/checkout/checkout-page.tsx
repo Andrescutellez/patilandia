@@ -10,8 +10,10 @@ import { generateBoldCheckout, type BoldCheckoutData } from "@/lib/vendure/bold-
 import {
   CASH_ON_DELIVERY_PAYMENT_METHOD_CODE,
   getEligibleShippingMethods,
+  getMipaqueteFreeShippingSettings,
   getMipaqueteLocations,
   setPaymentMethodIntent,
+  type FreeShippingSettings,
   type MipaqueteLocation,
   type OrderSummary,
   type ShippingMethodOption
@@ -165,6 +167,44 @@ function CityAutocomplete({
   );
 }
 
+/**
+ * "Te faltan $X para envío gratis" — compares productSubtotal (pre-tax, same basis the backend's
+ * MipaqueteService.applyCarrierShippingPricing/applyBogotaFreeShipping use) against whichever
+ * threshold currently applies. Bogotá propio has its own separate, usually-lower threshold (see
+ * Decisiones y Razonamiento) — this switches to it once that method is the one selected, and falls
+ * back to the general Mi Paquete threshold otherwise (including before a method is picked at all).
+ */
+function FreeShippingProgress({
+  productSubtotal,
+  settings,
+  isBogotaSelected
+}: {
+  productSubtotal: number;
+  settings: FreeShippingSettings;
+  isBogotaSelected: boolean;
+}) {
+  const enabled = isBogotaSelected ? settings.bogotaEnabled : settings.generalEnabled;
+  const threshold = isBogotaSelected ? settings.bogotaThreshold : settings.generalThreshold;
+  if (!enabled || threshold <= 0) return null;
+
+  const remaining = Math.max(0, threshold - productSubtotal);
+  const progress = Math.min(1, productSubtotal / threshold);
+
+  return (
+    <div className="rounded-2xl bg-[var(--brand-soft)] p-4">
+      <p className="text-sm font-bold text-[var(--brand-violet-deep)]">
+        {remaining > 0 ? `Te faltan ${formatCurrency(remaining)} para envío gratis 🎉` : "¡Tienes envío gratis! 🎉"}
+      </p>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/70">
+        <div
+          className="h-full rounded-full bg-[var(--brand-violet)] transition-[width]"
+          style={{ width: `${progress * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function CheckoutPage() {
   const {
     cart,
@@ -220,6 +260,14 @@ export function CheckoutPage() {
 
   useEffect(() => {
     getWhatsappSettings().then(setWhatsappSettings);
+  }, []);
+
+  // Doesn't depend on address/shipping method — fetched once so the progress bar can show from the
+  // moment the shopper has items in the cart, not just after they've quoted a real shipping method.
+  const [freeShippingSettings, setFreeShippingSettings] = useState<FreeShippingSettings | null>(null);
+
+  useEffect(() => {
+    getMipaqueteFreeShippingSettings().then(setFreeShippingSettings);
   }, []);
 
   // Mi Paquete's checkers/calculators quote against the order's real shipping address (see
@@ -836,6 +884,17 @@ export function CheckoutPage() {
 
         <aside className="h-fit rounded-[2rem] border border-white/60 bg-white/88 p-6 shadow-[0_24px_60px_rgba(31,36,84,0.1)]">
           <h2 className="font-display text-4xl leading-none text-[var(--ink)]">Resumen del pedido</h2>
+
+          {freeShippingSettings ? (
+            <div className="mt-4">
+              <FreeShippingProgress
+                isBogotaSelected={selectedShippingMethod?.isBogotaOwnShipping ?? false}
+                productSubtotal={productSubtotal}
+                settings={freeShippingSettings}
+              />
+            </div>
+          ) : null}
+
           <div className="mt-6 space-y-4">
             {cart.map((item) => (
               <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
