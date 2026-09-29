@@ -341,7 +341,7 @@ export function CatalogView({
 
           {mobileFiltersOpen ? <div className="lg:hidden">{filters}</div> : null}
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             {visibleProducts.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}
