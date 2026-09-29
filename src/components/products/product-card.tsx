@@ -184,6 +184,11 @@ export function ProductCard({
 
       <div className="space-y-2 p-2.5 sm:space-y-3 sm:p-4">
         <div className="space-y-1">
+          {product.brand ? (
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--muted)] sm:text-xs sm:tracking-[0.12em]">
+              {product.brand}
+            </p>
+          ) : null}
           <Link
             className="block font-display text-sm leading-tight text-[var(--ink)] sm:text-lg sm:leading-none lg:text-xl"
             href={`/producto/${product.slug}`}
